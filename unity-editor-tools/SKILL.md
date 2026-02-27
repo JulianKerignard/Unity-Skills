@@ -128,6 +128,57 @@ public class TargetComponentEditor : Editor
 }
 ```
 
+#### Template CustomEditor — UI Toolkit (Unity 6+)
+
+Pour les inspectors complexes, preferer UI Toolkit a IMGUI. Le binding automatique via `SerializedObject` simplifie le code.
+
+```csharp
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+[CustomEditor(typeof(TargetComponent))]
+public class TargetComponentEditor : Editor
+{
+    [SerializeField] private VisualTreeAsset inspectorUXML;
+
+    public override VisualElement CreateInspectorGUI()
+    {
+        var root = new VisualElement();
+
+        // Option 1 : UXML externe (recommande pour les inspectors complexes)
+        if (inspectorUXML != null)
+        {
+            inspectorUXML.CloneTree(root);
+        }
+        else
+        {
+            // Option 2 : Construction en code (pour les inspectors simples)
+            root.Add(new Label("Section principale") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
+            root.Add(new PropertyField(serializedObject.FindProperty("_fieldName")));
+
+            var foldout = new Foldout { text = "Avance", value = false };
+            foldout.Add(new PropertyField(serializedObject.FindProperty("_advancedField")));
+            root.Add(foldout);
+
+            var actionButton = new Button(() =>
+            {
+                var target = (TargetComponent)this.target;
+                Undo.RecordObject(target, "Action sur TargetComponent");
+                // Logique action
+            }) { text = "Action" };
+            root.Add(actionButton);
+        }
+
+        // Le binding avec SerializedObject est automatique pour les PropertyField
+        return root;
+    }
+}
+```
+
+Note : Avec `CreateInspectorGUI()`, les `PropertyField` se bindent automatiquement au `SerializedObject`. Pas besoin d'appeler `serializedObject.Update()` / `ApplyModifiedProperties()` manuellement — UI Toolkit le gere.
+
 #### Template PropertyDrawer
 
 ```csharp
@@ -277,7 +328,7 @@ public void CreateGUI()
 }
 ```
 
-Pour les nouveaux projets (Unity 2022+), preferer UI Toolkit a IMGUI pour les EditorWindow complexes. Pour les CustomEditor et PropertyDrawer, IMGUI reste le standard.
+Pour les nouveaux projets (Unity 6+), preferer UI Toolkit a IMGUI pour les EditorWindow et les CustomEditor complexes. Pour les PropertyDrawer simples, IMGUI reste acceptable. Voir le template CustomEditor UI Toolkit ci-dessus pour un exemple complet.
 
 ## Regles strictes
 
@@ -290,6 +341,12 @@ Pour les nouveaux projets (Unity 2022+), preferer UI Toolkit a IMGUI pour les Ed
 - **JAMAIS** utiliser `target` sans cast dans un CustomEditor (utiliser `(T)target` ou `serializedObject`)
 - **JAMAIS** oublier le `GUIContent.none` quand on dessine des sous-champs dans un Drawer
 - **JAMAIS** creer de fichier editor a la racine de `Assets/Scripts/`
+
+## Skills connexes
+
+- Generer le composant avant de creer son inspector ? Utiliser `/unity-code-gen` (Unity Code Gen)
+- Creer une UI runtime (pas editor) ? Utiliser `/uitk` (Unity UI Toolkit)
+- Tester les outils editor ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
 

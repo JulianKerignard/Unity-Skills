@@ -7,10 +7,11 @@ How to find and fix performance problems in Unity. The key discipline: profile f
 1. [Profiling Workflow](#1-profiling-workflow)
 2. [CPU Optimization](#2-cpu-optimization)
 3. [GPU & Rendering](#3-gpu--rendering)
-4. [Memory Management](#4-memory-management)
-5. [Physics](#5-physics)
-6. [Mobile Targets](#6-mobile-targets)
-7. [Build Size](#7-build-size)
+4. [Unity 6 Performance Features](#4-unity-6-performance-features)
+5. [Memory Management](#5-memory-management)
+6. [Physics](#6-physics)
+7. [Mobile Targets](#7-mobile-targets)
+8. [Build Size](#8-build-size)
 
 ---
 
@@ -193,7 +194,57 @@ Drawing the same pixel multiple times (overdraw) is the silent killer on mobile.
 
 ---
 
-## 4. Memory Management
+## 4. Unity 6 Performance Features
+
+### GPU Resident Drawer
+
+Unity 6 introduit le GPU Resident Drawer qui maintient les donnees de mesh persistantes sur le GPU, reduisant drastiquement les draw calls pour les objets statiques et LODs.
+
+**Activation :** Project Settings > Graphics > GPU Resident Drawer > Enabled
+
+**Impact :**
+- Reduction automatique des draw calls sans intervention manuelle
+- Particulierement efficace pour les scenes avec beaucoup de meshes statiques
+- Compatible avec LOD Groups — le GPU gere les transitions
+- Rend les optimisations manuelles de batching (static batching, manual mesh combining) moins critiques
+
+**Quand c'est pertinent :** Scenes avec 1000+ objets statiques, environnements ouverts, levels proceduraux.
+
+### Object.InstantiateAsync (Unity 6)
+
+Alternative asynchrone a `Instantiate()` pour les prefabs complexes, evite les spikes CPU :
+
+```csharp
+// Avant — synchrone, cause un spike si le prefab est lourd
+var go = Instantiate(complexPrefab, position, rotation);
+
+// Apres — asynchrone, repartit le travail sur plusieurs frames
+var op = Object.InstantiateAsync(complexPrefab, position, rotation);
+await op; // ou check op.isDone chaque frame
+var go = op.Result[0];
+```
+
+**Quand l'utiliser :**
+- Prefabs avec beaucoup de composants ou d'enfants
+- Spawning de groupes d'objets (enemies, items)
+- Scenes de loading ou transitions
+
+**Quand NE PAS l'utiliser :**
+- Prefabs simples (1-2 composants) — le overhead async n'en vaut pas la peine
+- Besoin d'un resultat immediatement dans la meme frame
+
+### Mesh LOD Auto-Generation (Unity 6.3+)
+
+Unity 6.3 introduit la generation automatique de LODs pour les meshes importes :
+
+- Configurable dans l'Import Settings du mesh
+- Genere les niveaux de LOD automatiquement (reduction de polygones)
+- Reduit le travail artiste pour la creation de LODs manuels
+- Cible : projets avec beaucoup de meshes sans LODs existants
+
+---
+
+## 5. Memory Management
 
 ### Texture Memory Reference
 
@@ -236,7 +287,7 @@ private void OnDestroy()
 
 ---
 
-## 5. Physics
+## 6. Physics
 
 ### Layer Collision Matrix
 
@@ -274,7 +325,7 @@ The `NonAlloc` variants reuse a pre-allocated buffer instead of creating a new a
 
 ---
 
-## 6. Mobile Targets
+## 7. Mobile Targets
 
 ### Budgets by Device Tier
 
@@ -283,6 +334,16 @@ The `NonAlloc` variants reuse a pre-allocated buffer instead of creating a new a
 | Low | iPhone 8, Galaxy S8 | 30 | < 100K | < 100 |
 | Mid | iPhone 12, Pixel 6 | 30-60 | < 300K | < 150 |
 | High | iPhone 15, Galaxy S24 | 60 | < 500K | < 200 |
+
+### Budgets actualises (devices 2024-2025)
+
+| Plateforme | FPS | Draw Calls | Triangles/frame | Memoire app |
+|---|---|---|---|---|
+| Mobile low-end (2022) | 30 | < 150 | < 80K | < 800 MB |
+| Mobile mid-range (2024) | 30-60 | < 300 | < 200K | < 1.5 GB |
+| Mobile high-end (2024) | 60 | < 500 | < 500K | < 2 GB |
+| Console (current gen) | 30-60 | < 3000 | < 5M | < 5 GB |
+| PC (mid-range) | 60-144 | < 5000 | < 10M | < 8 GB |
 
 ### Mobile Checklist
 
@@ -315,7 +376,7 @@ void OnEnterGameplay()
 
 ---
 
-## 7. Build Size
+## 8. Build Size
 
 ### Reduction Strategies
 

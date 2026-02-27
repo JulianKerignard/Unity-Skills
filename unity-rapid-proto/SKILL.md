@@ -65,6 +65,14 @@ Regles de code :
 - 1 commentaire par bloc non-evident, pas plus
 ```
 
+> **Note Input System (Unity 6+)** : Si le projet utilise le New Input System (defaut dans Unity 6), remplacer les appels `Input.*` :
+> - `Input.GetKey(KeyCode.Space)` → `Keyboard.current[Key.Space].isPressed`
+> - `Input.GetKeyDown(KeyCode.Space)` → `Keyboard.current[Key.Space].wasPressedThisFrame`
+> - `Input.GetAxis("Horizontal")` → `Gamepad.current.leftStick.x.ReadValue()` ou InputAction
+> - `Input.GetMouseButton(0)` → `Mouse.current.leftButton.isPressed`
+>
+> Pour un prototype rapide, le old Input Manager reste plus simple. Verifier `Edit > Project Settings > Player > Active Input Handling`.
+
 ### Etape 4 : Ecrire les instructions de setup
 
 Fournir dans cet ordre exact :

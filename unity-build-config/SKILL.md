@@ -45,6 +45,42 @@ Glob ".gitignore"                      → verifier si existant
 Glob ".gitattributes"                  → verifier si LFS configure
 ```
 
+### Build Profiles (Unity 6+)
+
+Unity 6 remplace les Build Settings traditionnels par des **Build Profiles**, des assets configurables par plateforme.
+
+**Avantages des Build Profiles :**
+- Plusieurs configurations independantes par plateforme (ex: Debug iOS, Release iOS, Demo Android)
+- Switchable sans reconfigurer manuellement les Build Settings
+- Scriptable et versionnable dans Git
+
+**Setup :**
+1. `File > Build Profiles` (remplace `File > Build Settings`)
+2. Creer un profil par configuration : `New Build Profile`
+3. Configurer par profil : scenes, scripting defines, compression, development build
+4. Activer un profil : double-click ou API
+
+**Impact sur les scripts de build C# :**
+```csharp
+// Avant (Build Settings classiques)
+BuildPipeline.BuildPlayer(scenes, outputPath, BuildTarget.Android, BuildOptions.None);
+
+// Apres (Build Profiles Unity 6+)
+// Les Build Profiles sont des assets .buildprofile
+// En CLI, utiliser -activeBuildProfile au lieu de -buildTarget
+```
+
+**Impact CI/CD :**
+```bash
+# Avant
+unity-editor -buildTarget Android -executeMethod Build.Perform
+
+# Apres (Unity 6+)
+unity-editor -activeBuildProfile "Assets/Settings/BuildProfiles/Android_Release.buildprofile" -executeMethod Build.Perform
+```
+
+**Coexistence :** Les Build Profiles n'empechent pas l'usage de `BuildPipeline.BuildPlayer()` classique, mais il est recommande de migrer pour les nouveaux projets.
+
 ### Etape 3 : Generer le script de build C#
 
 Creer `Assets/Editor/BuildAutomation.cs` :
@@ -170,6 +206,8 @@ jobs:
           path: build/${{ matrix.targetPlatform }}
           retention-days: 14
 ```
+
+**Note Unity 6+** : Adapter les workflows CI/CD pour utiliser `-activeBuildProfile` au lieu de `-buildTarget` si le projet utilise les Build Profiles.
 
 **Option B : GitLab CI**
 

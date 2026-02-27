@@ -10,6 +10,7 @@ Covers animation, 2D development, Shader Graph / VFX Graph, debugging, localizat
 4. [Debugging](#4-debugging)
 5. [Localization](#5-localization)
 6. [Accessibility](#6-accessibility)
+7. [Unity Inference Engine (ONNX)](#7-unity-inference-engine-onnx)
 
 ---
 
@@ -125,6 +126,44 @@ Use Blend Trees for smooth transitions between movement animations:
 | String-based SetTrigger | Typos fail silently | Cache `Animator.StringToHash()` |
 | No exit time on transitions | Animations cut abruptly | Set appropriate exit times or transition durations |
 | Huge monolithic Animator | Impossible to navigate | Split into layers + sub-state machines |
+
+### Animation Rigging Package
+
+Package `com.unity.animation.rigging` — adds IK constraints and rigging evaluated at runtime by the Animator.
+
+**Setup:**
+1. Add a `Rig Builder` component on the character root
+2. Create a child "Rig" GameObject with a `Rig` component
+3. Add constraint components as children of the Rig
+
+**Common constraints:**
+
+| Constraint | Use Case | Example |
+|---|---|---|
+| Two Bone IK | Arms/legs reaching a point | Hand grabs a handle |
+| Multi-Aim | Head/torso tracks a target | Character looks at an object |
+| Multi-Position | Object follows a position | Weapon in hand |
+| Damped Transform | Follow with smoothing | Camera attachment |
+| Twist Correction | Fix twist deformation | Forearm rotation |
+| Chain IK | Flexible bone chain | Tentacle, tail, rope |
+
+**Runtime control:**
+```csharp
+[SerializeField] private Rig aimRig;
+
+void Update()
+{
+    // Blend IK in/out based on situation
+    float targetWeight = hasTarget ? 1f : 0f;
+    aimRig.weight = Mathf.MoveTowards(aimRig.weight, targetWeight, Time.deltaTime * 5f);
+}
+```
+
+**Tips:**
+- Each constraint has a `weight` property (0-1) for blending
+- Use `RigBuilder.Build()` if you add constraints at runtime
+- Constraints are evaluated in child order within the Rig hierarchy — order matters for dependent chains
+- Combine with Animator layers: the Rig evaluates *after* the Animator, overriding or blending on top of the current pose
 
 ---
 
@@ -251,6 +290,31 @@ For Y-sorting (top-down games): set Transparency Sort Mode to Custom Axis (0, 1,
 - **Box2D v3 low-level API**: New `UnityEngine.LowLevelPhysics2D` namespace with multi-threaded physics, enhanced determinism, and visual debugging. Runs alongside the existing API and will eventually replace it.
 - **Sprite Atlas Analyser**: Built-in tool to find packing inefficiencies in your Sprite Atlases (wasted space, duplicates, oversized sprites)
 
+### Box2D v3 Physics (Unity 6.3+)
+
+Unity 6.3 integrates Box2D v3 as the 2D physics backend, providing better performance and new APIs:
+
+**What's new:**
+- Improved performance for simulations with many bodies (multi-threaded solver)
+- Low-level API for custom queries (`UnityEngine.LowLevelPhysics2D`)
+- Better joint and contact support
+- Enhanced determinism for replays and networking
+
+**Contact Events (new pattern):**
+```csharp
+// Unity 6.3+ : optimized contact event callbacks
+void OnCollisionEnter2D(Collision2D collision)
+{
+    // Access contact points with the new backend
+    foreach (var contact in collision.contacts)
+    {
+        Debug.Log($"Impact at {contact.point} with force {contact.normalImpulse}");
+    }
+}
+```
+
+**Note:** The backend change is transparent — existing Collider2D/Rigidbody2D code keeps working. Performance gains are automatic. The low-level API (`LowLevelPhysics2D`) runs alongside the high-level API and will eventually replace it.
+
 ---
 
 ## 3. Shader Graph & VFX Graph
@@ -273,6 +337,8 @@ For Y-sorting (top-down games): set Transparency Sort Mode to Custom Axis (0, 1,
 - **8 texture coordinate sets** (up from 4) for complex material layering
 - **Template browser** — start from pre-built shader templates
 - **Customized lighting content** — more control over lighting in custom shaders
+- **Custom Interpolators** — pass custom data between vertex and fragment stages without intermediate nodes
+- **Fullscreen Shader Graph** — create post-process effects directly in Shader Graph (URP), no custom render passes needed
 
 **Dissolve Effect:**
 ```
@@ -597,3 +663,63 @@ public class AccessibilitySettingsSO : ScriptableObject
 - [ ] **High contrast UI option** — solid backgrounds behind text
 - [ ] **Audio cues for visual events** — and visual cues for audio events
 - [ ] **Pause anywhere** — including cutscenes
+
+---
+
+## 7. Unity Inference Engine (ONNX)
+
+### Overview
+
+Unity Inference Engine (formerly Sentis) runs ONNX models directly inside Unity at runtime.
+
+**Package:** `com.unity.ai.inference` (previously `com.unity.sentis`)
+
+**Use cases:**
+- NPC AI (decision making, dialogue generation)
+- Computer vision (in-game object detection)
+- Procedural generation (textures, levels)
+- Audio (text-to-speech, voice recognition)
+
+### Basic Pattern
+
+```csharp
+using Unity.InferenceEngine;
+
+public class AIBrain : MonoBehaviour
+{
+    [SerializeField] private ModelAsset modelAsset;
+    private Worker worker;
+
+    void Start()
+    {
+        var model = ModelLoader.Load(modelAsset);
+        worker = new Worker(model, BackendType.GPUCompute);
+    }
+
+    public float[] Predict(float[] input)
+    {
+        using var inputTensor = new Tensor<float>(new TensorShape(1, input.Length), input);
+        worker.Schedule(inputTensor);
+        var output = worker.PeekOutput() as Tensor<float>;
+        return output.ToReadOnlyArray();
+    }
+
+    void OnDestroy() => worker?.Dispose();
+}
+```
+
+### Available Backends
+
+| Backend | Best For | Notes |
+|---|---|---|
+| `GPUCompute` | PC / console | Recommended default, uses compute shaders |
+| `CPU` | Fallback / debugging | Slower but works everywhere |
+| `GPUPixel` | Mobile (iOS/Android) | Uses pixel shaders, broader mobile support |
+
+### Tips
+
+- Import `.onnx` files directly into Unity — they become `ModelAsset` references
+- Use the **Inference Engine Model Validator** (included in the package) to check operator compatibility before shipping
+- Not all ONNX operators are supported — verify your model exports cleanly
+- For large models, split inference across multiple frames using `worker.Schedule()` with `worker.FlushSchedule()` to avoid frame spikes
+- Dispose tensors and workers when done to avoid GPU memory leaks

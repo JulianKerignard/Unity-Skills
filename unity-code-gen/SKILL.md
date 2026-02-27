@@ -31,36 +31,7 @@ Generation de code C# Unity production-ready. Analyse le projet existant, choisi
 
 ---
 
-## Guide etape par etape
-
-### Etape 1 — Analyser la demande
-
-Identifier clairement :
-- **Quoi** : feature, systeme, composant, data container, event ?
-- **Ou** : quel module du projet ? quel assembly definition ?
-- **Interactions** : avec quels systemes existants ?
-- **Donnees** : quelles donnees manipulees, persistees, serialisees ?
-
-### Etape 2 — Inspecter la codebase existante
-
-Avant d'ecrire une seule ligne, toujours executer ces recherches :
-
-```
-Glob("Assets/**/*.asmdef")              → assembly definitions, structure modules
-Glob("Assets/**/*.cs", limit aux dossiers cibles) → fichiers existants
-Grep("namespace ", type: "cs")           → conventions de namespace
-Grep("class .* : MonoBehaviour", type: "cs") → MonoBehaviours existants
-Grep("class .* : ScriptableObject", type: "cs") → SOs existants
-Grep("\\[SerializeField\\]", fichier cible)  → style de serialisation
-```
-
-Identifier :
-- Le pattern de nommage (`_camelCase` pour private ? prefixes ?)
-- La structure de namespace (`Game.Core`, `Game.Player`, etc.)
-- Les conventions d'attributs (`[Header]`, `[Tooltip]`, `[Range]`)
-- Les patterns deja utilises (events, interfaces, state machines)
-
-### Etape 3 — Choisir le pattern (arbre de decision)
+## Arbre de decision
 
 ```
 La chose a creer...
@@ -93,9 +64,47 @@ La chose a creer...
 ├─ Objets crees/detruits frequemment (projectiles, VFX) ?
 │  └─ OUI → Object Pool
 │
+├─ Logique asynchrone (chargement, timer, sequence) ?
+│  └─ OUI → Async Awaitable Component (Unity 6+)
+│
 └─ Milliers d'entites similaires a traiter en parallele ?
    └─ OUI → ECS (DOTS) — hors scope de cette skill
 ```
+
+---
+
+## Guide etape par etape
+
+### Etape 1 — Analyser la demande
+
+Identifier clairement :
+- **Quoi** : feature, systeme, composant, data container, event ?
+- **Ou** : quel module du projet ? quel assembly definition ?
+- **Interactions** : avec quels systemes existants ?
+- **Donnees** : quelles donnees manipulees, persistees, serialisees ?
+
+### Etape 2 — Inspecter la codebase existante
+
+Avant d'ecrire une seule ligne, toujours executer ces recherches :
+
+```
+Glob("Assets/**/*.asmdef")              → assembly definitions, structure modules
+Glob("Assets/**/*.cs", limit aux dossiers cibles) → fichiers existants
+Grep("namespace ", type: "cs")           → conventions de namespace
+Grep("class .* : MonoBehaviour", type: "cs") → MonoBehaviours existants
+Grep("class .* : ScriptableObject", type: "cs") → SOs existants
+Grep("\\[SerializeField\\]", fichier cible)  → style de serialisation
+```
+
+Identifier :
+- Le pattern de nommage (`_camelCase` pour private ? prefixes ?)
+- La structure de namespace (`Game.Core`, `Game.Player`, etc.)
+- Les conventions d'attributs (`[Header]`, `[Tooltip]`, `[Range]`)
+- Les patterns deja utilises (events, interfaces, state machines)
+
+### Etape 3 — Choisir le pattern
+
+Appliquer l'arbre de decision ci-dessus. En cas de doute, privilegier la composition et les patterns simples.
 
 ### Etape 4 — Generer le code C#
 
@@ -152,256 +161,12 @@ Si le projet a deja un dossier de tests, respecter sa structure.
 
 ---
 
-## Templates de reference
+## Format de sortie
 
-### MonoBehaviour Component
-
-```csharp
-using UnityEngine;
-
-namespace Game.Module
-{
-    [RequireComponent(typeof(Rigidbody))]
-    public class ComponentName : MonoBehaviour
-    {
-        [Header("Configuration")]
-        [SerializeField, Tooltip("Description du champ")]
-        private float _speed = 5f;
-
-        [Header("References")]
-        [SerializeField] private Transform _target;
-
-        public event System.Action<float> OnValueChanged;
-
-        public float Speed => _speed;
-
-        private Rigidbody _rb;
-
-        private void Awake()
-        {
-            _rb = GetComponent<Rigidbody>();
-        }
-
-        private void OnDestroy()
-        {
-            // Cleanup
-        }
-    }
-}
-```
-
-### ScriptableObject Data Container
-
-```csharp
-using UnityEngine;
-
-namespace Game.Data
-{
-    [CreateAssetMenu(fileName = "New ItemData", menuName = "Game/Item Data")]
-    public class ItemDataSO : ScriptableObject
-    {
-        [Header("Identity")]
-        [SerializeField] private string _itemName;
-        [SerializeField, TextArea(2, 5)] private string _description;
-
-        [Header("Stats")]
-        [SerializeField, Range(1, 999)] private int _value = 1;
-        [SerializeField] private Sprite _icon;
-
-        public string ItemName => _itemName;
-        public string Description => _description;
-        public int Value => _value;
-        public Sprite Icon => _icon;
-    }
-}
-```
-
-### ScriptableObject Event Channel (pub/sub)
-
-```csharp
-using System;
-using UnityEngine;
-
-namespace Game.Events
-{
-    [CreateAssetMenu(fileName = "New Event", menuName = "Game/Events/Void Event")]
-    public class VoidEventChannelSO : ScriptableObject
-    {
-        private Action _onRaised;
-
-        public void Raise() => _onRaised?.Invoke();
-        public void Subscribe(Action listener) => _onRaised += listener;
-        public void Unsubscribe(Action listener) => _onRaised -= listener;
-    }
-
-    // Variante typee
-    [CreateAssetMenu(fileName = "New Int Event", menuName = "Game/Events/Int Event")]
-    public class IntEventChannelSO : ScriptableObject
-    {
-        private Action<int> _onRaised;
-
-        public void Raise(int value) => _onRaised?.Invoke(value);
-        public void Subscribe(Action<int> listener) => _onRaised += listener;
-        public void Unsubscribe(Action<int> listener) => _onRaised -= listener;
-    }
-}
-```
-
-### Interface
-
-```csharp
-namespace Game.Core
-{
-    public interface IDamageable
-    {
-        int CurrentHealth { get; }
-        int MaxHealth { get; }
-        bool IsAlive { get; }
-        void TakeDamage(int amount, DamageInfo info);
-    }
-
-    public readonly struct DamageInfo
-    {
-        public readonly Vector3 Origin;
-        public readonly DamageType Type;
-
-        public DamageInfo(Vector3 origin, DamageType type)
-        {
-            Origin = origin;
-            Type = type;
-        }
-    }
-}
-```
-
-### State Machine (enum + switch)
-
-```csharp
-using UnityEngine;
-
-namespace Game.AI
-{
-    public class EnemyStateMachine : MonoBehaviour
-    {
-        public enum State { Idle, Patrol, Chase, Attack, Dead }
-
-        [SerializeField] private State _initialState = State.Idle;
-
-        private State _currentState;
-
-        public State CurrentState => _currentState;
-
-        private void Awake() => TransitionTo(_initialState);
-
-        private void Update() => UpdateState();
-
-        public void TransitionTo(State newState)
-        {
-            ExitState(_currentState);
-            _currentState = newState;
-            EnterState(newState);
-        }
-
-        private void EnterState(State state)
-        {
-            switch (state)
-            {
-                case State.Idle: /* init idle */ break;
-                case State.Patrol: /* init patrol */ break;
-                case State.Chase: /* init chase */ break;
-                case State.Attack: /* init attack */ break;
-                case State.Dead: /* init dead */ break;
-            }
-        }
-
-        private void UpdateState()
-        {
-            switch (_currentState)
-            {
-                case State.Idle: UpdateIdle(); break;
-                case State.Patrol: UpdatePatrol(); break;
-                case State.Chase: UpdateChase(); break;
-                case State.Attack: UpdateAttack(); break;
-            }
-        }
-
-        private void ExitState(State state) { /* cleanup par etat */ }
-
-        private void UpdateIdle() { }
-        private void UpdatePatrol() { }
-        private void UpdateChase() { }
-        private void UpdateAttack() { }
-    }
-}
-```
-
-### Command Pattern (Input)
-
-```csharp
-namespace Game.Input
-{
-    public interface ICommand
-    {
-        void Execute();
-        void Undo();
-    }
-
-    public class MoveCommand : ICommand
-    {
-        private readonly Transform _target;
-        private readonly Vector3 _direction;
-        private Vector3 _previousPosition;
-
-        public MoveCommand(Transform target, Vector3 direction)
-        {
-            _target = target;
-            _direction = direction;
-        }
-
-        public void Execute()
-        {
-            _previousPosition = _target.position;
-            _target.position += _direction;
-        }
-
-        public void Undo() => _target.position = _previousPosition;
-    }
-}
-```
-
-### Object Pool
-
-```csharp
-using UnityEngine;
-using UnityEngine.Pool;
-
-namespace Game.Core
-{
-    public class ProjectilePool : MonoBehaviour
-    {
-        [SerializeField] private Projectile _prefab;
-        [SerializeField] private int _defaultCapacity = 20;
-        [SerializeField] private int _maxSize = 100;
-
-        private ObjectPool<Projectile> _pool;
-
-        private void Awake()
-        {
-            _pool = new ObjectPool<Projectile>(
-                createFunc: () => Instantiate(_prefab),
-                actionOnGet: p => p.gameObject.SetActive(true),
-                actionOnRelease: p => p.gameObject.SetActive(false),
-                actionOnDestroy: p => Destroy(p.gameObject),
-                defaultCapacity: _defaultCapacity,
-                maxSize: _maxSize
-            );
-        }
-
-        public Projectile Get() => _pool.Get();
-        public void Release(Projectile p) => _pool.Release(p);
-    }
-}
-```
+Pour chaque generation, produire :
+1. Le(s) fichier(s) C# source dans le bon repertoire
+2. Le(s) fichier(s) de test NUnit correspondants
+3. Un resume : pattern choisi, fichiers crees, dependances identifiees
 
 ---
 
@@ -434,6 +199,7 @@ namespace Game.Core
 - Prototype rapide sans architecture ? Utiliser `/proto` (Unity Rapid Proto)
 - Refactorer du code existant ? Utiliser `/unity-refactor` (Unity Refactor)
 - Creer un custom inspector pour le composant genere ? Utiliser `/unity-editor-tools` (Unity Editor Tools)
+- Generer et executer les tests NUnit ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
 
@@ -445,3 +211,7 @@ namespace Game.Core
 | Tests impossibles car tout est couple | Extraire la logique dans des classes pure C# testables, garder le MonoBehaviour comme "glue" |
 | Le projet utilise des Singletons partout | Ne pas en ajouter de nouveaux, proposer une migration progressive vers SO/Service Locator |
 | Conflit de nommage avec un package tiers | Prefixer le namespace avec le nom du projet |
+
+---
+
+Pour les templates de code detailles, voir `references/code-templates.md`.

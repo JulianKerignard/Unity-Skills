@@ -32,9 +32,43 @@ Diagnostic et correction systematique de bugs Unity. Trace le chemin d'execution
 
 ---
 
-## Guide etape par etape
+## Classification des bugs
 
-### Etape 1 — Collecter les symptomes
+```
+Le bug est...
+|
++-- Erreur de compilation (code rouge, pas de Play)
+|   +-- COMPILE ERROR -> verifier syntaxe, references, asmdef
+|
++-- Exception a l'execution (message en console, peut crasher)
+|   +-- NullReferenceException        -> ARBRE NULL REF
+|   +-- MissingComponentException     -> ARBRE MISSING COMPONENT
+|   +-- MissingReferenceException     -> ARBRE DESTROYED OBJECT
+|   +-- IndexOutOfRangeException      -> verifier tailles collections
+|   +-- InvalidOperationException     -> verifier etat collection pendant iteration
+|   +-- StackOverflowException        -> verifier recursion / boucle d'events
+|   +-- OperationCanceledException    -> ARBRE ASYNC/AWAITABLE
+|
++-- Comportement incorrect (pas d'erreur visible)
+|   +-- LOGIC BUG -> tracer le chemin d'execution
+|
++-- Performance (lag, stutter, freeze)
+|   +-- Bug de perf specifique -> PERF ISSUE -> chercher allocations, Update lourd, physics
+|   +-- Audit systematique     -> utiliser /perf-audit a la place
+|
++-- Probleme visuel (rendu, UI, shader)
+|   +-- VISUAL GLITCH -> verifier materials, sorting, render pipeline
+|
++-- Probleme physique (traverse les murs, jitter)
+|   +-- PHYSICS BUG -> verifier Update vs FixedUpdate, layers, scale
+|
++-- Probleme async / Awaitable
+    +-- ASYNC BUG -> ARBRE ASYNC/AWAITABLE
+```
+
+## Workflow de diagnostic
+
+### 1 — Collecter les symptomes
 
 Informations a obtenir de l'utilisateur :
 - **Message d'erreur exact** (copie complete avec stack trace)
@@ -46,123 +80,26 @@ Si une stack trace est disponible, extraire :
 - Le fichier et la ligne (`at Namespace.Class.Method () in File.cs:line X`)
 - La chaine d'appel (qui appelle qui)
 
-### Etape 2 — Classifier le type de bug
+### 2 — Lire les fichiers impliques
 
 ```
-Le bug est...
-│
-├─ Erreur de compilation (code rouge, pas de Play)
-│  └─ COMPILE ERROR → verifier syntaxe, references, asmdef
-│
-├─ Exception a l'execution (message en console, peut crasher)
-│  ├─ NullReferenceException → ARBRE NULL REF
-│  ├─ MissingComponentException → ARBRE MISSING COMPONENT
-│  ├─ MissingReferenceException → ARBRE DESTROYED OBJECT
-│  ├─ IndexOutOfRangeException → verifier tailles collections
-│  ├─ InvalidOperationException → verifier etat collection pendant iteration
-│  └─ StackOverflowException → verifier recursion / boucle d'events
-│
-├─ Comportement incorrect (pas d'erreur visible)
-│  └─ LOGIC BUG → tracer le chemin d'execution
-│
-├─ Performance (lag, stutter, freeze)
-│  ├─ Bug de perf specifique (un cas precis) → PERF ISSUE → chercher allocations, Update lourd, physics
-│  └─ Audit systematique de performance → utiliser /perf-audit a la place
-│
-├─ Probleme visuel (rendu, UI, shader)
-│  └─ VISUAL GLITCH → verifier materials, sorting, render pipeline
-│
-└─ Probleme physique (traverse les murs, jitter)
-   └─ PHYSICS BUG → verifier Update vs FixedUpdate, layers, scale
-```
-
-### Etape 3 — Lire les fichiers impliques
-
-```
-Grep("class NomDuScript", type: "cs")        → trouver le fichier
-Read(fichier identifie)                       → lire le code complet
-Grep("GetComponent|Find|SendMessage", fichier) → reperer les appels risques
-Grep("void Update|void FixedUpdate", fichier)  → reperer les hot paths
+Grep("class NomDuScript", type: "cs")        -> trouver le fichier
+Read(fichier identifie)                       -> lire le code complet
+Grep("GetComponent|Find|SendMessage", fichier) -> reperer les appels risques
+Grep("void Update|void FixedUpdate", fichier)  -> reperer les hot paths
 ```
 
 Pour les stack traces, lire CHAQUE fichier mentionne dans la chaine d'appel, du plus profond au plus haut.
 
-### Etape 4 — Arbres diagnostiques
+### 3 — Appliquer l'arbre diagnostique
 
-#### ARBRE NULL REF — NullReferenceException
+Arbres de diagnostic detailles : voir `references/diagnostic-trees.md`
 
-```
-La reference null est...
-│
-├─ Un [SerializeField] ?
-│  ├─ Visible dans l'Inspector mais vide → reference non assignee (drag & drop manquant)
-│  └─ Pas visible → champ renomme ? Unity perd la serialisation au renommage
-│
-├─ Un GetComponent result ?
-│  ├─ Le composant est-il sur le meme GameObject ? → verifier le prefab
-│  ├─ Appele dans Awake mais depend d'un autre Awake ? → ordre d'execution
-│  └─ Utilise GetComponent au lieu de TryGetComponent → pas de gestion d'absence
-│
-├─ Un Find/FindObjectOfType result ?
-│  ├─ L'objet existe-t-il dans la scene ? → verifier nom exact, casse
-│  └─ L'objet est-il actif ? → Find ignore les inactifs
-│
-├─ Un objet detruit (Destroy) ?
-│  ├─ Acces apres Destroy dans le meme frame → Destroy est differe a la fin du frame
-│  └─ Callback/event qui reference un objet detruit → desubscribe dans OnDestroy
-│
-├─ Un resultat de coroutine/async ?
-│  └─ L'objet a-t-il ete detruit pendant le yield ? → verifier `this != null` apres yield
-│
-└─ Un acces a un composant UI ?
-   └─ L'UI est-elle instanciee ? Le Canvas est-il actif ? → timing d'initialisation
-```
+### 4 — Proposer le fix
 
-#### ARBRE MISSING COMPONENT — MissingComponentException
+## Format de sortie
 
-```
-├─ Le composant est-il sur le prefab ? → verifier le prefab original
-├─ AddComponent appele avant que le GO existe ? → verifier le timing
-├─ [RequireComponent] manquant ? → ajouter l'attribut pour garantir la presence
-├─ Composant supprime manuellement dans l'Inspector ? → chercher dans le prefab
-└─ Script manquant (fichier supprime/renomme) ? → chercher les "Missing Script" dans la scene
-```
-
-#### ARBRE RACE CONDITION / TIMING
-
-```
-├─ Awake vs Start → Awake : config interne. Start : references externes
-├─ Ordre d'execution entre scripts → Edit > Project Settings > Script Execution Order
-├─ OnEnable appele avant Start → OnEnable est appele a chaque activation, meme la premiere
-├─ Coroutine timing → yield return null = frame suivante, pas "immediatement"
-├─ Event souscrit trop tard → l'event a deja fire avant la subscription
-└─ DontDestroyOnLoad → verifier les duplications au rechargement de scene
-```
-
-#### ARBRE SERIALISATION
-
-```
-├─ Champ non serialise → manque [Serializable] sur le struct/class, ou c'est une interface
-├─ Dictionary non serialisable → Unity ne serialise pas Dictionary, utiliser 2 listes ou un SO
-├─ Champ abstract/interface → Unity ne serialise pas les interfaces, utiliser [SerializeReference]
-├─ ScriptableObject remis a zero → modifications runtime sur SO persistent en Editor mais pas en build
-└─ Valeurs perdues apres rename → le rename casse la serialisation, utiliser [FormerlySerializedAs]
-```
-
-#### ARBRE PHYSICS
-
-```
-├─ Objet traverse les murs → ContinuousDynamic collision detection, ou scale trop petit
-├─ Jitter de mouvement → utiliser Rigidbody.MovePosition dans FixedUpdate, pas transform.position
-├─ Collision non detectee → verifier Layer Collision Matrix (Project Settings > Physics)
-├─ Trigger non appele → au moins un des deux a un Rigidbody ? isTrigger coche ?
-├─ Force n'a pas d'effet → Rigidbody isKinematic est-il true ?
-└─ Comportement physique bizarre → echelle non-uniforme sur les colliders parents
-```
-
-### Etape 5 — Proposer le fix
-
-Format de sortie obligatoire :
+Format obligatoire pour chaque diagnostic :
 
 ```
 ## Diagnostic
@@ -173,9 +110,7 @@ Format de sortie obligatoire :
 **Prevention** : [comment eviter ce bug a l'avenir]
 ```
 
-### Etape 6 — Ajouter du code defensif si pertinent
-
-Exemples de patterns defensifs :
+## Code defensif — patterns
 
 ```csharp
 // Null check avec log explicite
@@ -207,25 +142,6 @@ private void OnDisable() => _eventChannel.Unsubscribe(OnEvent);
 
 ---
 
-## Patterns de bugs courants Unity (reference rapide)
-
-| Bug | Pourquoi | Fix |
-|-----|----------|-----|
-| `GetComponent` dans `Update` | Recherche chaque frame, lent | Cacher dans `Awake` dans un champ prive |
-| `Find("Name")` / `SendMessage("Method")` | String-based, fragile, lent | Utiliser des references directes ou events |
-| Coroutine sur objet disabled/destroyed | `StartCoroutine` echoue silencieusement | Verifier `gameObject.activeInHierarchy` avant |
-| `obj == null` vs `obj is null` | Unity override `==` pour les objets detruits, `is null` bypass ce check | Utiliser `== null` pour les objets Unity |
-| Event sans desubscription | Memory leak, callbacks sur objets detruits | Toujours `Unsubscribe` dans `OnDisable`/`OnDestroy` |
-| `Time.deltaTime` dans `FixedUpdate` | `FixedUpdate` a un pas fixe, `deltaTime` = `fixedDeltaTime` la-dedans | Utiliser `Time.fixedDeltaTime` ou rien (c'est constant) |
-| `Quaternion * Vector3` dans le mauvais ordre | `vector * quaternion` ne compile pas, `quaternion * vector` = rotation | Toujours `rotation * direction` |
-| LayerMask bit shifting | `1 << layerIndex` vs `layerIndex` | `LayerMask.GetMask("LayerName")` plus sur |
-| Modifier un SO a runtime | Persiste en Editor, pas en build | Cloner avec `Instantiate(so)` si modification runtime |
-| `Destroy` puis acces meme frame | L'objet existe encore jusqu'a la fin du frame | Utiliser `DestroyImmediate` seulement en Editor, sinon restructurer la logique |
-| Animation event appelle methode manquante | Typo dans le nom ou signature incorrecte | Verifier la signature exacte attendue par l'AnimationClip |
-| `async void` au lieu de `async Awaitable` | Exceptions non catchees, pas de lifecycle Unity | Utiliser `async Awaitable` (Unity 6+) ou `async UniTaskVoid` |
-
----
-
 ## Regles strictes
 
 **TOUJOURS :**
@@ -234,7 +150,7 @@ private void OnDisable() => _eventChannel.Unsubscribe(OnEvent);
 - Proposer une prevention en plus du fix
 - Commencer par l'explication la plus simple (rasoir d'Occam)
 - Verifier les references Inspector (champs `[SerializeField]` non assignes)
-- Verifier l'ordre de lifecycle Unity (`Awake` → `OnEnable` → `Start`)
+- Verifier l'ordre de lifecycle Unity (`Awake` -> `OnEnable` -> `Start`)
 - Fournir le diagnostic au format `Symptome | Cause | Fix | Prevention`
 
 **JAMAIS :**
@@ -251,6 +167,7 @@ private void OnDisable() => _eventChannel.Unsubscribe(OnEvent);
 
 - Le bug est un probleme de performance general, pas un cas specifique ? Utiliser `/perf-audit` (Unity Perf Audit)
 - Le fix necessite un refactoring important ? Utiliser `/unity-refactor` (Unity Refactor)
+- Le fix necessite de valider avec des tests ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
 
@@ -262,3 +179,7 @@ private void OnDisable() => _eventChannel.Unsubscribe(OnEvent);
 | Bug seulement en build (pas en Editor) | Verifier : stripping de code (IL2CPP), differences de serialisation, `#if UNITY_EDITOR` mal place, SO modifies a runtime |
 | Bug intermittent lie au framerate | Chercher du code dependant du frame dans `Update` qui devrait etre dans `FixedUpdate`, ou des comparaisons float sans epsilon |
 | Performance degrade progressivement | Chercher des fuites : events non desubscrits, listes qui grandissent sans clear, objets instancies sans pool |
+
+---
+
+> Table des bugs courants : voir `references/common-bugs.md`

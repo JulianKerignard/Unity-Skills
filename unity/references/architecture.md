@@ -583,6 +583,80 @@ root.dataSource = _playerStats;  // SO instance
 // <ui:ProgressBar binding-path="HealthPercent" />
 ```
 
+### Custom Controls (Unity 6+)
+
+Unity 6 replaces `UxmlFactory`/`UxmlTraits` with `[UxmlElement]` and `[UxmlAttribute]` attributes, much simpler:
+
+```csharp
+[UxmlElement]
+public partial class HealthBar : VisualElement
+{
+    [UxmlAttribute]
+    public float MaxValue { get; set; } = 100f;
+
+    [UxmlAttribute]
+    public float CurrentValue
+    {
+        get => currentValue;
+        set
+        {
+            currentValue = Mathf.Clamp(value, 0, MaxValue);
+            fill.style.width = Length.Percent(currentValue / MaxValue * 100f);
+        }
+    }
+    private float currentValue = 100f;
+
+    private readonly VisualElement fill;
+
+    public HealthBar()
+    {
+        style.height = 20;
+        style.backgroundColor = new Color(0.2f, 0.2f, 0.2f);
+        style.borderBottomLeftRadius = style.borderBottomRightRadius =
+            style.borderTopLeftRadius = style.borderTopRightRadius = 4;
+
+        fill = new VisualElement();
+        fill.style.height = Length.Percent(100);
+        fill.style.backgroundColor = Color.green;
+        fill.style.borderBottomLeftRadius = fill.style.borderBottomRightRadius =
+            fill.style.borderTopLeftRadius = fill.style.borderTopRightRadius = 4;
+        Add(fill);
+    }
+}
+// Usable directly in UXML: <HealthBar max-value="200" current-value="150" />
+```
+
+### New Controls (Unity 6)
+
+| Control | Usage |
+|---------|-------|
+| `ToggleButtonGroup` | Group of mutually exclusive toggles (toolbar) |
+| `Tab` / `TabView` | Tab navigation (settings, inventory) |
+| `MultiColumnTreeView` | Tree with columns (data editor) |
+
+### Data Binding — Runtime Bidirectional (Unity 6+)
+
+`[CreateProperty]` + `INotifyBindablePropertyChanged` for runtime two-way binding:
+
+```csharp
+public class InventoryViewModel : MonoBehaviour, INotifyBindablePropertyChanged
+{
+    public event EventHandler<BindablePropertyChangedEventArgs> propertyChanged;
+
+    [CreateProperty]
+    public int Gold
+    {
+        get => gold;
+        set { gold = value; Notify(); }
+    }
+    private int gold;
+
+    private void Notify([System.Runtime.CompilerServices.CallerMemberName] string prop = "")
+        => propertyChanged?.Invoke(this, new BindablePropertyChangedEventArgs(prop));
+}
+// UXML: <ui:IntegerField binding-path="Gold" />
+```
+
 ### Key Practices
 
 - **Query elements once in `OnEnable`**, cache references — repeated `Q<T>()` is wasteful
@@ -647,7 +721,7 @@ public void Explode()
 - **One CinemachineBrain** on your main Camera — it manages all virtual cameras
 - **Use Cinemachine Confiner** to keep cameras within level bounds
 - **Noise profiles** for subtle handheld camera feel (built-in presets work well)
-- **Cinemachine Decollider** to prevent camera clipping through walls in 3D
+- **CinemachineDeoccluder** (formerly CinemachineDecollider in CM 2.x) to prevent camera clipping through walls in 3D
 
 ---
 
@@ -665,3 +739,5 @@ When starting a new Unity project:
 8. Install core packages: Input System, TextMeshPro, Addressables
 9. Create base SO event channels (Void, Int, Float, String)
 10. Add `.editorconfig` for team code style consistency
+11. Configure Build Profiles (Unity 6+) — create per-platform profiles instead of using Build Settings
+12. Evaluate the New Input System (default in Unity 6) — configure an Input Actions asset

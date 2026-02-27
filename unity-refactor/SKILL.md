@@ -250,6 +250,32 @@ async Awaitable SpawnSequence(CancellationToken ct)
 }
 ```
 
+#### Mapping complet des yields
+
+| Coroutine (ancien) | Awaitable (nouveau) |
+|---------------------|---------------------|
+| `yield return null` | `await Awaitable.NextFrameAsync(destroyCancellationToken)` |
+| `yield return new WaitForSeconds(x)` | `await Awaitable.WaitForSecondsAsync(x, destroyCancellationToken)` |
+| `yield return new WaitForEndOfFrame()` | `await Awaitable.EndOfFrameAsync(destroyCancellationToken)` |
+| `yield return new WaitForFixedUpdate()` | `await Awaitable.FixedUpdateAsync(destroyCancellationToken)` |
+| `yield return new WaitUntil(() => cond)` | `while (!cond) await Awaitable.NextFrameAsync(destroyCancellationToken)` |
+| `yield return new WaitWhile(() => cond)` | `while (cond) await Awaitable.NextFrameAsync(destroyCancellationToken)` |
+| `yield return StartCoroutine(Other())` | `await OtherAsync()` |
+| `yield return asyncOperation` | `await asyncOperation` |
+
+**Important** : Toujours passer `destroyCancellationToken` pour annuler automatiquement si le MonoBehaviour est detruit.
+
+**Signature** : Changer `IEnumerator` en `async Awaitable` et ajouter le suffixe `Async` au nom :
+```csharp
+// Avant
+IEnumerator DoSequence() { ... }
+StartCoroutine(DoSequence());
+
+// Apres
+async Awaitable DoSequenceAsync() { ... }
+_ = DoSequenceAsync(); // fire and forget (ou await si appele depuis un autre async)
+```
+
 ### References directes vers Event Channel SO
 
 Avant :
@@ -295,6 +321,97 @@ public class UIHealth : MonoBehaviour
 }
 ```
 
+### Old Input vers New Input System
+
+Le New Input System est le defaut dans Unity 6. Migrer depuis `UnityEngine.Input` vers `UnityEngine.InputSystem`.
+
+Avant :
+```csharp
+using UnityEngine;
+
+public class PlayerInput : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+    [SerializeField] private float jumpForce = 10f;
+
+    private Rigidbody _rb;
+
+    void Awake() => _rb = GetComponent<Rigidbody>();
+
+    void Update()
+    {
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+        transform.Translate(new Vector3(h, 0, v) * (speed * Time.deltaTime));
+
+        if (Input.GetKeyDown(KeyCode.Space))
+            _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    }
+}
+```
+
+Apres :
+```csharp
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PlayerInput : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private InputActionReference jumpAction;
+
+    private Rigidbody _rb;
+
+    void Awake() => _rb = GetComponent<Rigidbody>();
+
+    void OnEnable()
+    {
+        moveAction.action.Enable();
+        jumpAction.action.Enable();
+        jumpAction.action.performed += OnJump;
+    }
+
+    void OnDisable()
+    {
+        jumpAction.action.performed -= OnJump;
+        moveAction.action.Disable();
+        jumpAction.action.Disable();
+    }
+
+    void Update()
+    {
+        Vector2 input = moveAction.action.ReadValue<Vector2>();
+        transform.Translate(new Vector3(input.x, 0, input.y) * (speed * Time.deltaTime));
+    }
+
+    private void OnJump(InputAction.CallbackContext ctx)
+    {
+        _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    }
+}
+```
+
+Etapes de migration :
+1. Installer le package Input System (`com.unity.inputsystem`)
+2. Creer un Input Actions asset (`.inputactions`)
+3. Definir les actions (Move: Value/Vector2, Jump: Button)
+4. Binder les controls (WASD, Gamepad stick, etc.)
+5. Remplacer les appels `Input.*` par des `InputAction` references
+6. Enable/Disable les actions dans `OnEnable`/`OnDisable`
+
+#### Mapping des appels courants
+
+| Old Input | New Input System |
+|-----------|------------------|
+| `Input.GetKey(KeyCode.Space)` | `Keyboard.current[Key.Space].isPressed` ou action |
+| `Input.GetKeyDown(KeyCode.Space)` | `Keyboard.current[Key.Space].wasPressedThisFrame` ou action `performed` |
+| `Input.GetAxis("Horizontal")` | `action.ReadValue<Vector2>().x` |
+| `Input.GetMouseButton(0)` | `Mouse.current.leftButton.isPressed` |
+| `Input.mousePosition` | `Mouse.current.position.ReadValue()` |
+| `Input.GetButton("Fire1")` | `action.IsPressed()` |
+
 ## Regles strictes
 
 - **JAMAIS** faire 2 refactorings en meme temps sur le meme fichier
@@ -314,6 +431,7 @@ public class UIHealth : MonoBehaviour
 
 - Generer du nouveau code propre ? Utiliser `/unity-code-gen` (Unity Code Gen)
 - Audit de performance (detection sans refactoring) ? Utiliser `/perf-audit` (Unity Perf Audit)
+- Tester le code apres refactoring ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
 

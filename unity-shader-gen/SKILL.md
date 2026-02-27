@@ -36,6 +36,8 @@ Analyser la demande utilisateur. Classifier l'effet parmi les recettes connues :
 - **Vertex displacement** : deformation de vertices par noise
 - **Custom** : combiner les techniques ci-dessus
 
+Pour les recettes d'effets detaillees, voir `references/shader-recipes.md`.
+
 ### Etape 2 : Detecter le render pipeline
 
 Utiliser Grep sur le fichier `manifest.json` du projet :
@@ -161,172 +163,40 @@ Toujours fournir les instructions de setup Material :
 3. Configurer les Properties exposees (textures, couleurs, seuils)
 4. Appliquer le Material sur le GameObject cible
 
-## Recettes d'effets
+## Render Graph API (Unity 6)
 
-### Dissolve
+Dans Unity 6, URP utilise le Render Graph API pour les custom render passes.
+`RecordRenderGraph()` remplace `Execute()` pour les ScriptableRenderPass personnalises.
 
-Principe : sampler une noise texture, `clip()` selon un seuil, emission sur le bord.
+Si l'utilisateur demande un custom render pass URP, mentionner cette migration :
+- Ancien : `ScriptableRenderPass.Execute(ScriptableRenderContext, ref RenderingData)`
+- Nouveau : `ScriptableRenderPass.RecordRenderGraph(RenderGraph, ContextContainer)`
+
+Le Render Graph gere automatiquement les ressources temporaires et optimise les passes.
+
+## ShadowCaster Pass URP
+
+Ce pass est **requis** pour que l'objet projette des ombres en URP. L'ajouter systematiquement apres le pass ForwardLit :
 
 ```hlsl
-// Properties requises :
-// _NoiseTex ("Noise", 2D), _DissolveAmount ("Amount", Range(0,1)),
-// _EdgeWidth ("Edge Width", Range(0,0.1)), _EdgeColor ("Edge Color", Color)
-
-half4 frag (Varyings IN) : SV_Target
+// Pass ShadowCaster — REQUIS pour que l'objet projette des ombres en URP
+Pass
 {
-    half4 col = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
-    half noise = SAMPLE_TEXTURE2D(_NoiseTex, sampler_NoiseTex, IN.uv).r;
-    clip(noise - _DissolveAmount);
-    half edge = smoothstep(_DissolveAmount, _DissolveAmount + _EdgeWidth, noise);
-    col.rgb = lerp(_EdgeColor.rgb, col.rgb, edge);
-    return col;
+    Name "ShadowCaster"
+    Tags { "LightMode"="ShadowCaster" }
+    ZWrite On
+    ZTest LEqual
+    ColorMask 0
+
+    HLSLPROGRAM
+    #pragma vertex vert
+    #pragma fragment frag
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShadowCasterPass.hlsl"
+    // Utilise les vertex/fragment du ShadowCasterPass.hlsl
+    ENDHLSL
 }
 ```
-
-### Outline (deux passes)
-
-Pass 1 : extrusion des vertices le long des normales (back-face). Pass 2 : rendu normal.
-
-```hlsl
-// Pass "Outline" (Cull Front)
-Varyings vertOutline (Attributes IN)
-{
-    Varyings OUT;
-    float3 posOS = IN.positionOS.xyz + IN.normalOS * _OutlineWidth;
-    OUT.positionHCS = TransformObjectToHClip(posOS);
-    return OUT;
-}
-half4 fragOutline (Varyings IN) : SV_Target { return _OutlineColor; }
-```
-
-### Toon / Cel-shading
-
-Paliers de lumiere via `step()` ou `smoothstep()`, rim lighting par fresnel.
-
-```hlsl
-half NdotL = saturate(dot(IN.normalWS, _MainLightPosition.xyz));
-half toon = smoothstep(_ShadowThreshold - 0.01, _ShadowThreshold + 0.01, NdotL);
-half3 diffuse = lerp(_ShadowColor.rgb, col.rgb, toon);
-half rim = 1.0 - saturate(dot(IN.normalWS, normalize(IN.viewDirWS)));
-rim = smoothstep(_RimThreshold - 0.1, _RimThreshold + 0.1, rim);
-diffuse += _RimColor.rgb * rim;
-```
-
-### Hologram
-
-Scanlines + fresnel + transparence + jitter vertex.
-
-```hlsl
-// Vertex : jitter aleatoire
-float jitter = frac(sin(dot(IN.positionOS.xy, float2(12.9898, 78.233))) * 43758.5453);
-IN.positionOS.x += jitter * _JitterAmount * step(0.99, frac(_Time.y * _JitterSpeed));
-
-// Fragment
-half scanline = frac(IN.positionWS.y * _ScanlineCount + _Time.y * _ScanlineSpeed);
-scanline = step(_ScanlineDensity, scanline);
-half rim = pow(1.0 - saturate(dot(IN.normalWS, IN.viewDirWS)), _FresnelPower);
-half4 col = _HoloColor * (scanline * 0.5 + 0.5) * (rim + 0.3);
-col.a = (_HoloAlpha + rim * 0.5) * scanline;
-```
-
-### Force field
-
-Fresnel + intersection avec la scene (depth buffer) + distortion animee.
-
-```hlsl
-half depth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, IN.screenUV), _ZBufferParams);
-half intersection = 1.0 - saturate((depth - IN.positionHCS.w) / _IntersectionWidth);
-half rim = pow(1.0 - saturate(dot(IN.normalWS, IN.viewDirWS)), _FresnelPower);
-half pattern = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, IN.uv + _Time.y * _ScrollSpeed).r;
-half4 col = _FieldColor * (rim + intersection) * pattern;
-col.a = saturate(rim + intersection) * _FieldAlpha;
-```
-
-### Water surface
-
-Vertex displacement (somme de sinus) + scrolling normal maps + depth-based transparency.
-
-```hlsl
-// Vertex displacement
-float wave = sin(IN.positionOS.x * _WaveFreq + _Time.y * _WaveSpeed) * _WaveAmp;
-wave += sin(IN.positionOS.z * _WaveFreq * 0.7 + _Time.y * _WaveSpeed * 1.3) * _WaveAmp * 0.5;
-IN.positionOS.y += wave;
-
-// Fragment : dual normal map scrolling
-float2 uv1 = IN.uv + _Time.y * _ScrollDir1 * _ScrollSpeed;
-float2 uv2 = IN.uv + _Time.y * _ScrollDir2 * _ScrollSpeed * 0.8;
-half3 n1 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv1));
-half3 n2 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv2));
-half3 normal = normalize(n1 + n2);
-```
-
-### Triplanar mapping
-
-Projection UV sur 3 axes en world-space, blend par la normale.
-
-```hlsl
-half4 triplanar(TEXTURE2D_PARAM(tex, samp), float3 posWS, float3 normalWS, float sharpness)
-{
-    half3 blend = pow(abs(normalWS), sharpness);
-    blend /= (blend.x + blend.y + blend.z);
-    half4 cx = SAMPLE_TEXTURE2D(tex, samp, posWS.yz);
-    half4 cy = SAMPLE_TEXTURE2D(tex, samp, posWS.xz);
-    half4 cz = SAMPLE_TEXTURE2D(tex, samp, posWS.xy);
-    return cx * blend.x + cy * blend.y + cz * blend.z;
-}
-```
-
-### Vertex displacement
-
-Deformation par noise pour terrain, tissu, explosions.
-
-```hlsl
-float3 displaced = IN.positionOS.xyz;
-float n = noise(displaced.xz * _NoiseScale + _Time.y * _AnimSpeed);
-displaced += IN.normalOS * n * _DisplaceAmount;
-OUT.positionHCS = TransformObjectToHClip(displaced);
-```
-
-## Fonctions utilitaires HLSL
-
-Inclure dans le shader selon les besoins :
-
-```hlsl
-float2 rotateUV(float2 uv, float angle)
-{
-    float s = sin(angle);
-    float c = cos(angle);
-    uv -= 0.5;
-    uv = float2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
-    uv += 0.5;
-    return uv;
-}
-
-float noise(float2 p)
-{
-    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
-}
-
-half fresnel(float3 normal, float3 viewDir, half power)
-{
-    return pow(1.0 - saturate(dot(normal, viewDir)), power);
-}
-
-float remap(float value, float from1, float to1, float from2, float to2)
-{
-    return from2 + (value - from1) * (to2 - from2) / (to1 - from1);
-}
-```
-
-## Optimisation mobile
-
-- Utiliser `half` au lieu de `float` pour couleurs, UV, normales
-- Maximum 4 samples texture par pass
-- Eviter les dependent texture reads (calculer les UV dans le vertex shader)
-- Utiliser `#pragma shader_feature` et non `#pragma multi_compile` (reduit les variants compilees)
-- Pas de branching dynamique (`if`) : utiliser `step()`, `lerp()`, `saturate()` a la place
-- Tester avec `#pragma target 3.0` minimum
-- Utiliser `Tags { "Queue"="Geometry" }` sauf si transparence requise
 
 ## Regles strictes
 
@@ -336,6 +206,7 @@ float remap(float value, float from1, float to1, float from2, float to2)
 - **TOUJOURS** fournir les instructions Material apres le shader
 - **TOUJOURS** placer le fichier dans `Assets/Shaders/` ou sous-dossier
 - **TOUJOURS** nommer le shader avec le pattern `Game/Category/EffectName`
+- **TOUJOURS** inclure un pass `ShadowCaster` en URP (voir section dediee)
 - **JAMAIS** melanger `CGPROGRAM/ENDCG` et `HLSLPROGRAM/ENDHLSL` dans le meme shader
 - **JAMAIS** utiliser des surface shaders en URP/HDRP (vertex/fragment uniquement)
 - **JAMAIS** oublier le `CBUFFER_START(UnityPerMaterial)` en URP (necessaire pour SRP Batcher)
@@ -346,6 +217,7 @@ float remap(float value, float from1, float to1, float from2, float to2)
 
 - Le shader est pour un prototype rapide ? Utiliser `/proto` (Unity Rapid Proto) pour le setup scene
 - Configurer le build apres les shaders ? Utiliser `/build-config` (Unity Build & CI/CD Configurator)
+- Problemes de performance shader ? Utiliser `/unity-perf-audit` pour l'audit de performance
 
 ## Troubleshooting
 
@@ -355,7 +227,12 @@ float remap(float value, float from1, float to1, float from2, float to2)
 | SRP Batcher incompatible | Mettre toutes les Properties dans un `CBUFFER_START(UnityPerMaterial)` / `CBUFFER_END` |
 | Shader ne fonctionne pas en URP | Verifier les tags `"RenderPipeline"="UniversalPipeline"` et `"LightMode"="UniversalForward"` |
 | Transparence ne s'affiche pas | Ajouter `Tags { "Queue"="Transparent" }`, `Blend SrcAlpha OneMinusSrcAlpha`, `ZWrite Off` |
-| Ombre absente | Ajouter un pass `ShadowCaster` avec les includes appropriees |
+| Ombre absente | Ajouter un pass `ShadowCaster` avec les includes appropriees (voir section ShadowCaster) |
 | Performance faible mobile | Reduire les samples texture, passer en `half`, supprimer les `if` dynamiques |
 | Textures floues / tiling incorrect | Verifier `TRANSFORM_TEX(IN.uv, _MainTex)` et les `_ST` variables dans le CBUFFER |
 | Depth intersection ne fonctionne pas | S'assurer que `_CameraDepthTexture` est active (URP : cocher Depth Texture dans le pipeline asset) |
+
+## References
+
+- Pour les recettes d'effets detaillees, voir `references/shader-recipes.md`
+- Pour les fonctions utilitaires HLSL et l'optimisation mobile, voir `references/hlsl-utils.md`

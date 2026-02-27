@@ -6,12 +6,13 @@ Practical patterns that come up repeatedly in Unity C# code. When writing or rev
 
 1. [MonoBehaviour Lifecycle](#1-monobehaviour-lifecycle)
 2. [Async Patterns](#2-async-patterns)
-3. [Event Patterns](#3-event-patterns)
-4. [Extension Methods](#4-useful-extension-methods)
-5. [Null Safety in Unity](#5-null-safety-in-unity)
-6. [Serialization](#6-serialization)
-7. [Editor Scripting](#7-editor-scripting)
-8. [Code Style Conventions](#8-code-style-conventions)
+3. [C# 9+ Features (Unity 6)](#3-c-9-features-unity-6)
+4. [Event Patterns](#4-event-patterns)
+5. [Extension Methods](#5-useful-extension-methods)
+6. [Null Safety in Unity](#6-null-safety-in-unity)
+7. [Serialization](#7-serialization)
+8. [Editor Scripting](#8-editor-scripting)
+9. [Code Style Conventions](#9-code-style-conventions)
 
 ---
 
@@ -106,6 +107,74 @@ public async Awaitable DelayedAction(float seconds)
 private void OnDisable() => _cts?.Cancel();
 ```
 
+### destroyCancellationToken — Preferred Cancellation
+
+Every `MonoBehaviour` exposes a `destroyCancellationToken` that fires automatically when the object is destroyed. Always prefer it over manually managing a `CancellationTokenSource` — it prevents fire-and-forget async methods from running on dead objects.
+
+```csharp
+async Awaitable FadeOutAsync()
+{
+    float t = 1f;
+    while (t > 0f)
+    {
+        t -= Time.deltaTime;
+        canvasGroup.alpha = t;
+        await Awaitable.NextFrameAsync(destroyCancellationToken);
+    }
+}
+```
+
+### Thread Switching — BackgroundThreadAsync / MainThreadAsync
+
+`Awaitable` lets you hop between threads within a single method. Use `BackgroundThreadAsync()` for heavy CPU work (parsing, compression) and `MainThreadAsync()` to return to the main thread before touching any Unity API.
+
+```csharp
+async Awaitable<LevelData> LoadLevelAsync(string path)
+{
+    // Heavy file parsing on background thread
+    await Awaitable.BackgroundThreadAsync();
+    var json = File.ReadAllText(path);
+    var data = JsonUtility.FromJson<LevelData>(json);
+
+    // Back to main thread for Unity API
+    await Awaitable.MainThreadAsync();
+    return data;
+}
+```
+
+### AwaitableCompletionSource\<T\> — Custom Async Triggers
+
+When you need to await something that isn't frame-based (a UI button press, a network response, a player choice), create an `AwaitableCompletionSource<T>` and resolve it externally.
+
+```csharp
+private AwaitableCompletionSource<bool> dialogChoice;
+
+public async Awaitable<bool> ShowConfirmDialogAsync(string message)
+{
+    dialogChoice = new AwaitableCompletionSource<bool>();
+    ShowDialog(message);
+    return await dialogChoice.Awaitable;
+}
+
+// Called by UI buttons
+public void OnConfirm() => dialogChoice.SetResult(true);
+public void OnCancel()  => dialogChoice.SetResult(false);
+```
+
+### Common Awaitable APIs
+
+| API | Purpose |
+|---|---|
+| `Awaitable.NextFrameAsync(token)` | Wait until the next frame |
+| `Awaitable.WaitForSecondsAsync(seconds, token)` | Wait for a duration |
+| `Awaitable.EndOfFrameAsync(token)` | Wait until end of current frame |
+| `Awaitable.FixedUpdateAsync(token)` | Wait until next FixedUpdate |
+| `Awaitable.FromAsyncOperation(op)` | Wrap an `AsyncOperation` (scene load, asset bundle) |
+| `Awaitable.BackgroundThreadAsync()` | Switch to a background thread |
+| `Awaitable.MainThreadAsync()` | Switch back to the main thread |
+
+**Convention:** suffix all methods returning `Awaitable` or `Awaitable<T>` with `Async` (e.g., `LoadLevelAsync`, `FadeOutAsync`).
+
 ### When to Use What
 
 | Need | Best Choice | Reason |
@@ -117,7 +186,80 @@ private void OnDisable() => _cts?.Cancel();
 
 ---
 
-## 3. Event Patterns
+## 3. C# 9+ Features (Unity 6)
+
+Unity 6 uses Roslyn and supports C# 9 (some C# 10/11 features are also available). These modern syntax features reduce boilerplate and improve readability in Unity scripts.
+
+### Init-only Properties
+
+Init-only properties (`init`) allow setting values only at construction time, giving you immutable-by-default data objects without needing a constructor.
+
+```csharp
+public record EnemySpawnConfig
+{
+    public Vector3 Position { get; init; }
+    public Quaternion Rotation { get; init; }
+    public int Health { get; init; } = 100;
+}
+
+// Usage
+var config = new EnemySpawnConfig
+{
+    Position = Vector3.zero,
+    Rotation = Quaternion.identity
+};
+```
+
+### Target-typed `new`
+
+The compiler infers the type from the left-hand side, reducing repetition — especially helpful with long generic types.
+
+```csharp
+// Before
+Dictionary<string, List<Enemy>> groups = new Dictionary<string, List<Enemy>>();
+
+// After (C# 9)
+Dictionary<string, List<Enemy>> groups = new();
+List<Vector3> points = new();
+```
+
+### Pattern Matching (switch expressions, relational, logical)
+
+Switch expressions combined with relational patterns (`<`, `>=`) replace bulky if-else chains for value classification.
+
+```csharp
+public static string GetDamageLevel(int damage) => damage switch
+{
+    <= 0  => "None",
+    < 25  => "Light",
+    < 50  => "Medium",
+    < 100 => "Heavy",
+    _     => "Critical"
+};
+
+// Property pattern — destructure object properties inline
+public static float GetSpeedMultiplier(EnemyState state) => state switch
+{
+    { IsStunned: true }                    => 0f,
+    { IsSlowed: true, SlowFactor: var f }  => f,
+    { IsSprinting: true }                  => 1.5f,
+    _                                      => 1f
+};
+```
+
+### File-scoped Namespaces
+
+Removes one level of indentation from every type in the file. Prefer this in all new scripts.
+
+```csharp
+namespace Game.Combat;  // instead of namespace Game.Combat { ... }
+
+public class DamageSystem { }
+```
+
+---
+
+## 4. Event Patterns
 
 ### C# Events — Code-to-Code Communication
 
@@ -170,7 +312,7 @@ When systems exist in different scenes, or you want zero compile-time dependenci
 
 ---
 
-## 4. Useful Extension Methods
+## 5. Useful Extension Methods
 
 Keep a `Utils/UnityExtensions.cs` file with frequently needed helpers:
 
@@ -203,7 +345,7 @@ public static class UnityExtensions
 
 ---
 
-## 5. Null Safety in Unity
+## 6. Null Safety in Unity
 
 Unity overrides the `==` operator for its Object types. This means `null` checks behave differently than in standard C#, and getting it wrong is a very common source of bugs.
 
@@ -243,7 +385,7 @@ public class PhysicsMovement : MonoBehaviour { }
 
 ---
 
-## 6. Serialization
+## 7. Serialization
 
 ### What Gets Serialized
 
@@ -287,7 +429,7 @@ public class AbilityHolder : MonoBehaviour
 
 ---
 
-## 7. Editor Scripting
+## 8. Editor Scripting
 
 ### Quick Debug Actions (No Custom Editor Needed)
 
@@ -343,7 +485,7 @@ public class LevelGeneratorEditor : Editor
 
 ---
 
-## 8. Code Style Conventions
+## 9. Code Style Conventions
 
 ### Script Layout Order
 

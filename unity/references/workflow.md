@@ -278,6 +278,48 @@ public class PlayerIntegrationTests
 
 Aim for: most logic testable in Edit Mode, only integration points in Play Mode.
 
+### Testing Async Code (Unity 6+)
+
+Les tests de code asynchrone utilisant `Awaitable` necessitent une approche specifique :
+
+**EditMode — logique async pure (sans Unity lifecycle) :**
+```csharp
+[Test]
+public async Task AsyncCalculation_ReturnsCorrectResult()
+{
+    var service = new DataService();
+    var result = await service.ProcessAsync();
+    Assert.AreEqual(42, result);
+}
+```
+
+**PlayMode — avec Unity lifecycle :**
+```csharp
+[UnityTest]
+public IEnumerator AsyncSpawn_CreatesObject() => AsyncTestRunner.Run(async () =>
+{
+    var spawner = new GameObject().AddComponent<AsyncSpawner>();
+    await spawner.SpawnAsync();
+    Assert.IsNotNull(GameObject.Find("SpawnedObject"));
+});
+
+// Helper pour wrapper async dans IEnumerator
+public static class AsyncTestRunner
+{
+    public static IEnumerator Run(Func<Task> asyncTest)
+    {
+        var task = asyncTest();
+        while (!task.IsCompleted) yield return null;
+        if (task.IsFaulted) throw task.Exception.InnerException;
+    }
+}
+```
+
+**Points cles :**
+- `destroyCancellationToken` n'existe pas dans les tests (pas de MonoBehaviour detruit) — utiliser un `CancellationTokenSource` explicite si necessaire
+- Les `[UnityTest]` retournent `IEnumerator`, wrapper les appels async
+- Timeout : ajouter `[Timeout(5000)]` pour eviter les tests qui pendent
+
 ---
 
 ## 3. CI/CD
@@ -307,6 +349,45 @@ jobs:
           unityVersion: 6000.0.23f1
 ```
 
+### game-ci v4+ (2024-2025)
+
+game-ci a ete mis a jour avec le support Unity 6 :
+
+```yaml
+# .github/workflows/unity-test.yml (game-ci v4+)
+name: Unity Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          unityVersion: 6000.0.23f1  # Unity 6 version format
+          testMode: all
+          artifactsPath: test-results
+          coverageOptions: 'generateAdditionalMetrics;generateHtmlReport'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results
+```
+
+**Changements cles v4 :**
+- Support Unity 6 (format version `6000.x.y`)
+- Actions GitHub v4 (`actions/checkout@v4`, `actions/upload-artifact@v4`)
+- Meilleur support des tests async
+- Coverage HTML report integre
+
 ### What to Automate
 
 - **Build** on every push to `main` or `develop`
@@ -314,6 +395,36 @@ jobs:
 - **Play Mode tests** on nightly builds (slower)
 - **Build size tracking** to catch regressions
 - **Code analysis** (Roslyn analyzers, .editorconfig enforcement)
+
+### Build Profiles dans CI/CD (Unity 6+)
+
+Les Build Profiles modifient les commandes CLI pour le CI :
+
+```bash
+# Avant (Build Settings)
+unity-editor -batchmode -buildTarget Android -executeMethod BuildScript.Build
+
+# Apres (Build Profiles)
+unity-editor -batchmode \
+  -activeBuildProfile "Assets/Settings/BuildProfiles/Android_Release.buildprofile" \
+  -executeMethod BuildScript.Build
+```
+
+**Dans GitHub Actions :**
+```yaml
+- uses: game-ci/unity-builder@v4
+  with:
+    unityVersion: 6000.0.23f1
+    buildMethod: BuildScript.Build
+    customParameters: '-activeBuildProfile Assets/Settings/BuildProfiles/${{ matrix.profile }}.buildprofile'
+```
+
+**Matrice de builds multi-profil :**
+```yaml
+strategy:
+  matrix:
+    profile: [Android_Release, iOS_Release, WebGL_Demo]
+```
 
 ---
 

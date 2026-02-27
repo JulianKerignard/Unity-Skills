@@ -60,57 +60,9 @@ Produire un resume :
 
 ### Etape 2 : Detecter les anti-patterns
 
-Executer les recherches Grep suivantes sur tous les fichiers `.cs` du projet (hors exclusions). Pour chaque match, noter le fichier, le numero de ligne, et la ligne de code.
+Scanner les fichiers C# pour les anti-patterns CPU, GPU et memoire. Voir `references/anti-patterns.md` pour la table complete des patterns a detecter.
 
-#### Anti-patterns CPU
-
-| # | Pattern | Commande Grep | Severite |
-|---|---------|---------------|----------|
-| C1 | GetComponent dans Update/FixedUpdate | `GetComponent` puis verifier si dans un bloc Update/FixedUpdate/LateUpdate | Critical |
-| C2 | Find en runtime | `Find\(\"\|FindObjectOfType\|FindWithTag\|FindObjectsOfType\|FindGameObjectsWithTag` | Critical |
-| C3 | Concatenation string dans hot path | `\+ "` et `\.ToString()` dans Update/FixedUpdate | High |
-| C4 | Instantiate dans Update | `Instantiate\(` dans Update/FixedUpdate | High |
-| C5 | LINQ dans Update | `\.Where(\|\.Select(\|\.Any(\|\.First(\|\.OrderBy(` dans ou appele depuis Update | High |
-| C6 | foreach dans hot path | `foreach` dans Update/FixedUpdate/LateUpdate | Medium |
-| C7 | Allocation new dans Update | `new List\|new Dictionary\|new \w+\[\]` dans Update | Medium |
-| C8 | SendMessage / BroadcastMessage | `SendMessage\(\|BroadcastMessage\(` | Medium |
-| C9 | CompareTag manquant | `\.tag\s*==\|\.tag\s*!=` | Low |
-| C10 | Camera.main repete | `Camera\.main` dans Update | Medium |
-
-**Methode de detection pour les hot paths :**
-
-Le hot path inclut : `Update()`, `FixedUpdate()`, `LateUpdate()`, `OnGUI()`, `OnTriggerStay`, `OnCollisionStay`.
-
-Pour detecter si un pattern est dans un hot path :
-1. Grep le pattern dans tout le projet
-2. Pour chaque match, lire le fichier et verifier si la ligne est dans le corps d'une methode hot path
-3. Si le pattern est dans une methode appelee depuis un hot path (call chain), le signaler aussi mais en severite reduite
-
-Utiliser Grep avec contexte (`-B` et `-A`) pour voir le nom de la methode englobante :
-```
-Grep pattern avec -B 20 pour trouver la signature de methode precedente
-Chercher "void Update" ou "void FixedUpdate" dans les lignes precedentes
-```
-
-#### Anti-patterns GPU
-
-| # | Pattern | Methode de detection |
-|---|---------|---------------------|
-| G1 | Materiaux transparents excessifs | Grep `transparent\|fade\|Transparent` dans les .shader et .mat (Glob `**/*.shader`, `**/*.mat`) |
-| G2 | Pas de LOD sur les meshes | Grep `MeshRenderer\|MeshFilter` et verifier l'absence de `LODGroup` dans le meme GameObject ou parent |
-| G3 | Lumieres realtime | Grep `LightType\|new Light\|GetComponent<Light>` -- verifier dans les scenes si possible |
-| G4 | SetPass calls elevees | Grep `Material\(\|new Material` (creation de materiaux a runtime = batching casse) |
-
-#### Anti-patterns Memoire
-
-| # | Pattern | Commande Grep | Severite |
-|---|---------|---------------|----------|
-| M1 | Resources.Load sans Unload | `Resources\.Load` sans `Resources\.UnloadUnusedAssets` dans le meme fichier | High |
-| M2 | Texture creation runtime | `new Texture2D\|new RenderTexture` | High |
-| M3 | Event leak (subscribe sans unsubscribe) | `\+=` sur un event/Action/delegate, verifier presence de `-=` correspondant dans OnDisable/OnDestroy | High |
-| M4 | Allocation tableau dans Update | `new\s+\w+\[` dans Update | Medium |
-| M5 | Coroutine avec allocation | `new WaitForSeconds\|new WaitForEndOfFrame` dans une coroutine appelee frequemment | Medium |
-| M6 | Pas de Dispose sur IDisposable | `new\s+(StreamReader\|StreamWriter\|FileStream\|WebClient\|HttpClient)` sans `using` ou `.Dispose()` | Medium |
+Pour chaque match, noter le fichier, le numero de ligne, et la ligne de code. Executer les recherches Grep sur tous les fichiers `.cs` du projet (hors exclusions).
 
 ### Etape 3 : Scorer et categoriser
 
@@ -247,6 +199,7 @@ Ces budgets servent de reference pour contextualiser les problemes trouves. Ne p
 
 - Diagnostiquer un bug de performance specifique (crash, freeze ponctuel) ? Utiliser `/unity-debug` (Unity Debug)
 - Appliquer les corrections detectees avec refactoring structure ? Utiliser `/unity-refactor` (Unity Refactor)
+- Tester apres correction ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
 
@@ -260,3 +213,5 @@ Ces budgets servent de reference pour contextualiser les problemes trouves. Ne p
 | Anti-pattern dans du code desactive | Verifier s'il y a `#if` / `[System.Obsolete]` / commentaire indiquant du code mort. Ne pas reporter le code mort. |
 | Pas de fichiers .cs trouves | Le projet est peut-etre vide ou les scripts sont dans un package. Verifier avec `Glob **/*.cs` sans filtre de dossier. |
 | Event leak faux positif | Verifier les patterns : si `+=` est dans `OnEnable` et `-=` est dans `OnDisable`, c'est correct. Verifier aussi les lambdas anonymes (impossible a unsubscribe). |
+
+Table complete des anti-patterns : voir `references/anti-patterns.md`
