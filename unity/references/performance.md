@@ -242,6 +242,11 @@ Unity 6.3 introduit la generation automatique de LODs pour les meshes importes :
 - Reduit le travail artiste pour la creation de LODs manuels
 - Cible : projets avec beaucoup de meshes sans LODs existants
 
+### APIs Renommees (Unity 6)
+
+- `Rigidbody.velocity` → `Rigidbody.linearVelocity` (idem pour `Rigidbody2D`). L'ancien nom genere un warning de deprecation. Performance identique, mais mettre a jour pour eviter le bruit dans la console et le Profiler.
+- `Rigidbody.angularVelocity` → verifier les deprecation warnings selon la version exacte de Unity 6.x.
+
 ---
 
 ## 5. Memory Management

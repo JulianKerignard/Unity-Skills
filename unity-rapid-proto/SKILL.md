@@ -20,6 +20,26 @@ Produit :
 - Un dossier `Assets/Prototypes/` (sera cree si absent)
 - Connaissance du concept a prototyper en 1-2 phrases
 
+## Arbre de decision
+
+```
+Type de prototype ?
+|
++-- 3D gameplay ?
+|   +-- Deplacement + exploration --> Template 3D Platformer
+|   +-- Tir / combat --> Template FPS
+|   +-- Placement strategique --> Template Tower Defense
+|   +-- Course automatique --> Template Runner / Endless
+|
++-- 2D gameplay ?
+|   +-- Deplacement top-down --> Template Top-Down 2D
+|   +-- Puzzle / grille --> Template Puzzle (grid-based)
+|   +-- Platformer 2D --> Adapter Template 3D Platformer en 2D
+|
++-- Pas sur ?
+    +-- Commencer en 3D (plus visuel, plus facile a debloquer)
+```
+
 ## Demarrage rapide
 
 1. L'utilisateur decrit son idee en 1-2 phrases

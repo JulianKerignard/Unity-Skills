@@ -44,6 +44,28 @@ Architecture reseau...
     +-- -> Unity Lobby + Relay
 ```
 
+## Packages complementaires (Unity 6+)
+
+### Multiplayer Center (`Window > Multiplayer Center`)
+
+Point d'entree recommande par Unity pour configurer un projet multiplayer :
+- Recommande les packages a installer selon le type de jeu (casual, competitif, MMO)
+- Configure automatiquement le `NetworkManager` et le transport
+- Propose des templates de projet multiplayer pre-configures
+- Guide vers les bons Gaming Services (Lobby, Relay, Matchmaker)
+
+Utiliser le Multiplayer Center au lieu de configurer manuellement quand on demarre un projet from scratch.
+
+### Dedicated Server package (`com.unity.dedicated-server`)
+
+Pour les jeux avec serveur dedie (pas host mode) :
+- **Multiplayer Roles** : marquer du contenu comme `Client`, `Server`, ou `ClientAndServer` dans Build Profiles
+- **Content Selection** : le build pipeline strip automatiquement les assets non pertinents pour le role (textures, audio, UI pour le serveur)
+- **Impact** : builds serveur 50-80% plus legers
+- **Setup** : Installer le package → configurer les roles dans Build Profiles → assigner les roles aux composants/GameObjects
+
+Pertinent uniquement pour les jeux qui shippent un binaire serveur separe. Pas necessaire en mode host.
+
 ## Guide etape par etape
 
 ### Step 1 — Setup NetworkManager

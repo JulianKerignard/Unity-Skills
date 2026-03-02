@@ -15,6 +15,27 @@ Genere des shaders Unity complets (fichiers `.shader`) adaptes au render pipelin
 - Connaissance de l'effet souhaite (description textuelle ou reference visuelle)
 - Acces en ecriture au dossier `Assets/`
 
+## Arbre de decision
+
+```
+Type de shader demande ?
+|
++-- Effet sur un materiau (dissolve, outline, toon, hologram) ?
+|   +-- --> Recettes dans references/shader-recipes.md
+|
++-- Post-processing / fullscreen effect ?
+|   +-- URP 6.3+ --> Fullscreen Shader Graph (prefere, zero code)
+|   +-- URP custom --> Custom render pass avec Render Graph API
+|   +-- HDRP --> Custom Pass Volume
+|
++-- Custom render pass (injection dans le pipeline) ?
+|   +-- Unity 6+ --> Render Graph API (RecordRenderGraph)
+|   +-- Pre-Unity 6 --> ScriptableRenderPass.Execute (deprecie)
+|
++-- Modification de vertices (displacement, wind, snow) ?
+    +-- --> Vertex shader avec noise (voir references/hlsl-utils.md)
+```
+
 ## Demarrage rapide
 
 1. L'utilisateur decrit l'effet voulu (ex: "un shader de dissolve avec bordure lumineuse")
@@ -163,16 +184,64 @@ Toujours fournir les instructions de setup Material :
 3. Configurer les Properties exposees (textures, couleurs, seuils)
 4. Appliquer le Material sur le GameObject cible
 
-## Render Graph API (Unity 6)
+## Render Graph API (Unity 6+)
 
-Dans Unity 6, URP utilise le Render Graph API pour les custom render passes.
-`RecordRenderGraph()` remplace `Execute()` pour les ScriptableRenderPass personnalises.
+Unity 6 utilise le **Render Graph** comme backend pour URP et HDRP. Les custom render passes doivent migrer vers cette API. `SetupRenderPasses` est **deprecie**.
 
-Si l'utilisateur demande un custom render pass URP, mentionner cette migration :
-- Ancien : `ScriptableRenderPass.Execute(ScriptableRenderContext, ref RenderingData)`
-- Nouveau : `ScriptableRenderPass.RecordRenderGraph(RenderGraph, ContextContainer)`
+### Migration obligatoire
 
-Le Render Graph gere automatiquement les ressources temporaires et optimise les passes.
+| Ancien (deprecie) | Nouveau (Render Graph) |
+|---|---|
+| `ScriptableRenderPass.Execute(ScriptableRenderContext, ref RenderingData)` | `ScriptableRenderPass.RecordRenderGraph(RenderGraph, ContextContainer)` |
+| `SetupRenderPasses(...)` dans ScriptableRendererFeature | `AddRenderPasses(ScriptableRenderer, ref RenderingData)` |
+| Allocation manuelle de RTHandles | `RenderGraph.CreateTexture(desc)` — gestion automatique |
+| `cmd.Blit(...)` | `RenderGraphUtils.BlitMaterialParameters` via Render Graph |
+
+### Pattern : Custom Fullscreen Pass (URP)
+
+```csharp
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Rendering.RenderGraphModule;
+
+public class CustomFullscreenPass : ScriptableRenderPass
+{
+    private Material _material;
+
+    public CustomFullscreenPass(Material material)
+    {
+        _material = material;
+        renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
+    }
+
+    public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+    {
+        var resourceData = frameData.Get<UniversalResourceData>();
+
+        using (var builder = renderGraph.AddRasterRenderPass<PassData>("Custom Fullscreen", out var passData))
+        {
+            passData.material = _material;
+            builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+            builder.SetRenderFunc((PassData data, RasterGraphContext ctx) =>
+            {
+                ctx.cmd.DrawProcedural(Matrix4x4.identity, data.material, 0, MeshTopology.Triangles, 3);
+            });
+        }
+    }
+
+    private class PassData
+    {
+        public Material material;
+    }
+}
+```
+
+### Avantages du Render Graph
+
+- **Gestion automatique des ressources** : pas besoin d'allouer/liberer les render textures manuellement
+- **Culling de passes** : les passes non-utilisees sont automatiquement supprimees
+- **Meilleur profiling** : chaque passe apparait clairement dans le Frame Debugger
+- **Fullscreen Shader Graph (6.3+)** : pour les post-process simples, preferer Fullscreen Shader Graph au custom pass code — zero C#, resultats visuels immediats
 
 ## ShadowCaster Pass URP
 

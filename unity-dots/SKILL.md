@@ -58,6 +58,13 @@ Mon projet a-t-il besoin de DOTS ?
     --> Full DOTS avec authoring/baking
 ```
 
+### Roadmap ECS (Unity 6.4+)
+
+- **Unity 6.4** : le package `com.unity.entities` transite vers un package core (integre a l'editeur, plus besoin de l'installer manuellement)
+- **Unity 6.5 (prevu)** : changements structurels sur le type `Entity` (passage a un ID 64-bit). Impact : la serialisation custom et le stockage d'`Entity` dans des `NativeContainer` pourront etre affectes. Anticiper en evitant de persister des `Entity` bruts — utiliser des identifiants metier a la place.
+
+Ces changements ne cassent pas le code existant dans Unity 6.0-6.3 mais sont importants pour les decisions d'architecture a long terme.
+
 ## Guide etape par etape
 
 ### Step 1 : Component (data only)

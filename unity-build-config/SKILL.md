@@ -15,6 +15,25 @@ Configure l'ensemble du pipeline de build Unity : scripts de build C# automatise
 - Un repository Git (ou pret a etre initialise)
 - Pour CI/CD : une licence Unity (Personal, Plus, Pro) stockee en secret
 
+## Arbre de decision
+
+```
+Que configurer ?
+|
++-- Build automatise seulement ?
+|   +-- --> Etape 3 (script C# BuildAutomation)
+|
++-- CI/CD complet ?
+|   +-- GitHub ? --> Etape 4 Option A (GitHub Actions + game-ci)
+|   +-- GitLab ? --> Etape 4 Option B (GitLab CI)
+|
++-- Git setup (nouveau projet) ?
+|   +-- --> Etape 5 (.gitignore + .gitattributes + LFS)
+|
++-- Build Profiles (Unity 6+) ?
+    +-- --> Section Build Profiles (etape 2)
+```
+
 ## Demarrage rapide
 
 1. L'utilisateur demande une configuration de build (ex: "configure CI/CD pour Windows et WebGL")

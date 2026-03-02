@@ -723,6 +723,42 @@ public void Explode()
 - **Noise profiles** for subtle handheld camera feel (built-in presets work well)
 - **CinemachineDeoccluder** (formerly CinemachineDecollider in CM 2.x) to prevent camera clipping through walls in 3D
 
+### Migration Cinemachine 2.x → 3.x
+
+Unity 6 ship Cinemachine 3.x par defaut. Les projets existants en CM 2.x doivent migrer. L'upgrader automatique (`Window > Cinemachine > Upgrade from 2.x`) gere la majorite mais certains changements requierent une intervention manuelle.
+
+#### Table de renommage des composants
+
+| CM 2.x | CM 3.x |
+|---|---|
+| `CinemachineVirtualCamera` | `CinemachineCamera` |
+| `CinemachineFreeLook` | `CinemachineCamera` + `CinemachineOrbitalFollow` + `CinemachineRotationComposer` |
+| `Cinemachine3rdPersonFollow` | `CinemachineThirdPersonFollow` |
+| `CinemachineComposer` | `CinemachineRotationComposer` |
+| `CinemachineFramingTransposer` | `CinemachinePositionComposer` |
+| `CinemachineTransposer` | `CinemachineFollow` |
+| `CinemachinePOV` | `CinemachinePanTilt` |
+| `CinemachineCollider` | `CinemachineDeoccluder` |
+| `CinemachineSmoothPath` / `CinemachinePath` | `SplineContainer` (Unity Splines package) |
+| `CinemachineDollyCart` | `CinemachineSplineCart` |
+| `CinemachineTrackedDolly` | `CinemachineSplineDolly` |
+
+#### Changements breaking
+
+- **Input** : CM 3.x decouple l'input. Utiliser `CinemachineInputAxisController` au lieu de l'ancien input integre. Ajouter ce composant sur le `CinemachineCamera` et configurer les Input Actions.
+- **Splines** : Les paths custom sont remplaces par le package Unity Splines (`com.unity.splines`). Utiliser `SplineContainer` + `CinemachineSplineDolly`.
+- **Priority** : En CM 3.x, la priorite est un `int` simple sur `CinemachineCamera.Priority` (plus haut = plus prioritaire). L'ancien systeme de canaux est supprime.
+- **Extensions** : Les extensions CM 2.x deviennent des components CM 3.x. Les ajouter directement sur le `CinemachineCamera`.
+
+#### Workflow de migration
+
+1. Backup du projet (commit propre avant migration)
+2. Lancer l'upgrader : `Window > Cinemachine > Upgrade from 2.x`
+3. Verifier les warnings dans la Console
+4. Tester chaque camera dans le jeu
+5. Reconfigurer l'input si necessaire (`CinemachineInputAxisController`)
+6. Remplacer les paths par des `SplineContainer` si utilises
+
 ---
 
 ## 11. Project Startup Checklist

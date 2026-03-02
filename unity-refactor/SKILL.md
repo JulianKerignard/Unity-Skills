@@ -14,6 +14,30 @@ Cette skill analyse une codebase Unity C# pour detecter les code smells, propose
 - Projet Unity avec du code C# existant dans `Assets/Scripts/`
 - Pas de dependance MCP Unity : utilise uniquement Read, Write, Edit, Grep, Glob, Bash
 
+## Arbre de decision
+
+```
+Quel type de dette technique ?
+|
++-- Code trop long / illisible ?
+|   +-- Fichier > 500 lignes --> God class split (risque eleve)
+|   +-- Methode > 50 lignes --> Extraction de methodes (risque faible)
+|
++-- Couplage fort entre classes ?
+|   +-- References directes cross-systeme --> Event Channel SO (risque moyen)
+|   +-- Singleton partout --> SO / Service Locator (risque eleve)
+|
++-- API obsolete ?
+|   +-- Old Input --> New Input System (risque moyen, recette 6)
+|   +-- Coroutines --> async Awaitable (risque moyen, recette 4)
+|
++-- Code smells generaux ?
+    +-- Magic strings --> Constantes / enum (risque faible)
+    +-- Champs publics --> [SerializeField] private (risque faible)
+```
+
+Voir le catalogue de refactoring ci-dessous pour les recettes detaillees.
+
 ## Demarrage rapide
 
 1. Scanner la codebase pour detecter les code smells

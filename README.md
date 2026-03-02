@@ -105,7 +105,7 @@ ln -s $(pwd)/Unity-Skills/* ~/.claude/skills/
 
 - **15 skills** (1 reference + 14 execution)
 - **~11,000 lines** of structured instructions
-- **~22 reference files** covering architecture, C# patterns, performance, templates, specialized topics, and workflow
+- **19 reference files** covering architecture, C# patterns, performance, templates, specialized topics, and workflow
 - **30+ C# templates** (MonoBehaviour, ScriptableObject, Event Channels, State Machines, Object Pools, Async Awaitable, NetworkBehaviour, ISystem, Editor tools)
 - **8 shader recipes** (dissolve, outline, toon, hologram, force field, water, triplanar, vertex displacement)
 - **30+ performance anti-patterns** with Grep detection rules

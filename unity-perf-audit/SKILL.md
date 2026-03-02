@@ -20,6 +20,18 @@ Produit :
 - Acces en lecture au dossier du projet
 - Aucun package, aucun outil externe requis
 
+## Arbre de decision
+
+```
+Symptome rapporte ?
+|
++-- FPS bas en general --> Lancer le scan complet (etapes 1-5)
++-- Spikes ponctuels / stuttering --> Focus CPU (anti-patterns C1-C12)
++-- Memoire qui grimpe / crashs OOM --> Focus Memory (anti-patterns M1-M7)
++-- Rendu lent, draw calls hauts --> Focus GPU (anti-patterns G1-G5)
++-- Pas de symptome precis (audit preventif) --> Scan complet
+```
+
 ## Demarrage rapide
 
 1. Scanner la structure projet (Glob `**/*.cs`)

@@ -11,6 +11,7 @@ Covers animation, 2D development, Shader Graph / VFX Graph, debugging, localizat
 5. [Localization](#5-localization)
 6. [Accessibility](#6-accessibility)
 7. [Unity Inference Engine (ONNX)](#7-unity-inference-engine-onnx)
+8. [Platform Toolkit (Unity 6.3+)](#8-platform-toolkit-unity-63)
 
 ---
 
@@ -289,6 +290,18 @@ For Y-sorting (top-down games): set Transparency Sort Mode to Custom Axis (0, 1,
 - **Render 3D as 2D**: The 2D URP Renderer now supports Mesh Renderer and Skinned Mesh Renderer alongside sprites in the same scene — great for mixing 3D characters with 2D environments
 - **Box2D v3 low-level API**: New `UnityEngine.LowLevelPhysics2D` namespace with multi-threaded physics, enhanced determinism, and visual debugging. Runs alongside the existing API and will eventually replace it.
 - **Sprite Atlas Analyser**: Built-in tool to find packing inefficiencies in your Sprite Atlases (wasted space, duplicates, oversized sprites)
+
+### 2D/3D Mixing Pattern (6.3+)
+
+Le 2D URP Renderer supporte desormais `MeshRenderer` et `SkinnedMeshRenderer` aux cotes des sprites. Cas d'usage : personnages 3D dans un environnement 2D, props 3D dans un jeu 2D.
+
+**Setup** :
+1. Utiliser le **2D Renderer** (URP) comme renderer actif
+2. Ajouter les objets 3D normalement (Mesh + MeshRenderer + Material URP)
+3. Les objets 3D participent au sorting 2D (meme Sorting Layer / Order in Layer)
+4. L'eclairage 2D (`Light2D`) affecte les objets 3D si le material est compatible
+
+**Contrainte** : les objets 3D utilisent le meme pipeline de sorting que les sprites. Pour un controle precis de la profondeur, utiliser les Sorting Layers et l'Order in Layer.
 
 ### Box2D v3 Physics (Unity 6.3+)
 
@@ -723,3 +736,81 @@ public class AIBrain : MonoBehaviour
 - Not all ONNX operators are supported — verify your model exports cleanly
 - For large models, split inference across multiple frames using `worker.Schedule()` with `worker.FlushSchedule()` to avoid frame spikes
 - Dispose tensors and workers when done to avoid GPU memory leaks
+
+### Pattern : Inference repartie sur plusieurs frames
+
+Pour les modeles lourds, eviter de bloquer une frame entiere :
+
+```csharp
+public class AsyncInference : MonoBehaviour
+{
+    private Worker _worker;
+    private bool _inferenceInProgress;
+
+    public async Awaitable<float[]> PredictAsync(float[] input)
+    {
+        if (_inferenceInProgress) return null;
+        _inferenceInProgress = true;
+
+        using var inputTensor = new Tensor<float>(new TensorShape(1, input.Length), input);
+        _worker.Schedule(inputTensor);
+
+        while (!_worker.hasFinished)
+            await Awaitable.NextFrameAsync(destroyCancellationToken);
+
+        var output = _worker.PeekOutput() as Tensor<float>;
+        _inferenceInProgress = false;
+        return output.ToReadOnlyArray();
+    }
+}
+```
+
+### Quantization workflow
+
+1. Exporter le modele en ONNX depuis PyTorch/TensorFlow
+2. Quantizer avec `onnxruntime.quantization` (Python) : FP32 → FP16 ou INT8
+3. Importer le modele quantize dans Unity
+4. Tester avec le Model Validator du package
+
+Un modele FP16 est ~2x plus petit et ~1.5x plus rapide sur GPU sans perte perceptible pour les cas gaming (NPC AI, detection, generation).
+
+### Backend par plateforme
+
+| Plateforme | Backend recommande | Raison |
+|---|---|---|
+| PC / Console | `GPUCompute` | Meilleure performance, compute shaders disponibles |
+| iOS | `GPUPixel` | Pas de compute sur tous les devices |
+| Android (haut de gamme) | `GPUCompute` | Si Vulkan disponible |
+| Android (bas de gamme) | `CPU` | Fallback le plus compatible |
+| WebGL | `CPU` | Pas de compute dans le navigateur |
+
+## 8. Platform Toolkit (Unity 6.3+)
+
+API unifiee pour les services cross-plateforme (PS5, Xbox, Switch, Steam, Android, iOS). Evite d'integrer chaque SDK plateforme separement.
+
+### Services couverts
+
+| Service | Description |
+|---|---|
+| Achievements | Trophees/Achievements multi-plateforme |
+| Save Data | Sauvegardes cloud par plateforme |
+| Accounts | Identite joueur (PSN, Xbox Live, Steam, etc.) |
+| Commerce | In-app purchases cross-platform |
+
+### Setup
+
+1. Installer `com.unity.platform-toolkit` via Package Manager
+2. Configurer les credentials plateforme dans `Project Settings > Platform Toolkit`
+3. Initialiser au boot :
+   ```csharp
+   await PlatformServices.InitializeAsync();
+   ```
+4. Les APIs retournent des resultats generiques — le toolkit route vers le bon SDK natif
+
+### Quand l'utiliser
+
+- Projet multi-plateforme (2+ plateformes) avec achievements ou cloud saves
+- Nouveau projet Unity 6.3+ — simplifie significativement le code multi-plateforme
+- **Ne PAS utiliser si** : une seule plateforme cible, ou Unity < 6.3
+
+**Note** : Le Platform Toolkit est recent. Verifier la documentation officielle pour les APIs exactes car l'API peut evoluer.

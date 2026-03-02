@@ -38,6 +38,71 @@ public class PlayerStatsViewModel : MonoBehaviour, INotifyBindablePropertyChange
 
 ### Connexion : `root.dataSource = viewModel;` dans le presenter.
 
+## DataBinding Avance (Unity 6+)
+
+Le systeme complet de binding utilise `dataSource`, `dataSourcePath`, `BindingMode` et `Converter` pour des scenarios plus complexes que le simple `[CreateProperty]`.
+
+### DataSource et DataSourcePath
+
+Chaque `VisualElement` peut avoir un `dataSource` (objet C#) et un `dataSourcePath` (chemin vers une propriete). Le `dataSource` propage aux elements enfants.
+
+```csharp
+// DataSource sur un element parent — propage aux enfants
+var panel = root.Q("stats-panel");
+panel.dataSource = playerStatsViewModel;
+
+// DataSourcePath pour cibler une propriete
+var healthBar = root.Q<ProgressBar>("health-bar");
+healthBar.SetBinding("value", new DataBinding
+{
+    dataSourcePath = new PropertyPath("Health"),
+    bindingMode = BindingMode.ToTarget
+});
+```
+
+### BindingMode
+
+| Mode | Direction | Usage |
+|---|---|---|
+| `TwoWay` | Source <-> UI | Champs de saisie (TextField, Slider) |
+| `ToTarget` | Source → UI | Affichage lecture seule (Label, ProgressBar) |
+| `ToSource` | UI → Source | Rare — input pur sans lecture |
+| `ToTargetOnce` | Source → UI (1x) | Initialisation sans live update |
+
+### Converters globaux
+
+Les Converters transforment les donnees entre source et UI. Enregistrer des converters globaux pour eviter la duplication :
+
+```csharp
+[RuntimeInitializeOnLoadMethod]
+static void RegisterConverters()
+{
+    ConverterGroups.RegisterGlobalConverter(
+        (ref float value) => $"{value * 100:F0}%");
+
+    ConverterGroups.RegisterGlobalConverter(
+        (ref int value) => value > 0 ? $"+{value}" : value.ToString());
+}
+```
+
+### Syntaxe UXML
+
+```xml
+<!-- Binding par nom de propriete -->
+<ui:Label binding-path="PlayerName" />
+
+<!-- Binding avec data-source-path explicite -->
+<ui:ProgressBar data-source-path="HealthPercent" />
+```
+
+### Quand utiliser quoi
+
+| Scenario | Approche |
+|---|---|
+| UI simple (5-10 bindings) | `[CreateProperty]` + `binding-path` en UXML |
+| UI complexe (inventaire, settings) | `DataBinding` explicite + `BindingMode` + Converters |
+| UI Editor (custom Inspector) | `SerializedProperty` binding natif (pas besoin de DataBinding) |
+
 ## Navigation Stack Pattern
 
 Push/pop d'ecrans, similaire a un navigation controller mobile.

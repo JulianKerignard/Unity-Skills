@@ -1,5 +1,5 @@
 ---
-name: unity
+name: "Unity"
 description: >
   Comprehensive Unity game development best practices guide covering architecture, C# patterns,
   performance, rendering (URP/HDRP), DOTS/ECS, multiplayer, project structure, animation,
