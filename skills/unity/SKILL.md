@@ -327,3 +327,24 @@ For multiplayer: think server-authoritative from day one. Validate all inputs on
 | Animation blending | Blend Trees | Discrete states with no blending → simple transitions |
 | 2D Physics | Built-in Physics2D | High-perf/deterministic needs → Box2D v3 low-level API (6.3+) |
 | Cross-platform services | Platform Toolkit (6.3+) | Older Unity → manual per-platform SDKs |
+
+---
+
+## Skills connexes
+
+| Besoin | Skill |
+|--------|-------|
+| Generer du code C# production | `/unity-code-gen` (Unity Code Gen) |
+| Tester le code | `/unity-test` (Unity Test) |
+| Debugger un probleme | `/unity-debug` (Unity Debug) |
+| Prototyper rapidement | `/proto` (Unity Rapid Proto) |
+| Audit de performance | `/perf-audit` (Unity Perf Audit) |
+| Refactorer du code existant | `/unity-refactor` (Unity Refactor) |
+| Custom editor tools | `/editor` (Unity Editor Tools) |
+| Shaders HLSL | `/shader` (Unity Shader Generator) |
+| UI avec UI Toolkit | `/uitk` (Unity UI Toolkit) |
+| Multiplayer NGO | `/netcode` (Unity Multiplayer) |
+| Asset loading async | `/addressables` (Unity Addressables) |
+| Animation avancee | `/anim` (Unity Animation) |
+| ECS et Jobs | `/dots` (Unity DOTS) |
+| Build et CI/CD | `/build-config` (Unity Build & CI/CD) |

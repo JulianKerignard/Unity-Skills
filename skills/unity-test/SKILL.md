@@ -201,6 +201,7 @@ Injecter l'interface dans le MonoBehaviour via `[SerializeField]` ou setter publ
 - `/unity-code-gen` — generer les tests en meme temps que le code
 - `/unity-refactor` — extraire la logique testable d'un MonoBehaviour existant
 - `/unity-debug` — quand un test revele un bug a corriger
+- `/perf-audit` — audit statique de performance (detecte les anti-patterns sans executer)
 
 ## Troubleshooting
 

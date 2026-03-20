@@ -1,0 +1,27 @@
+{
+  "name": "unity-skills",
+  "version": "1.0.0",
+  "description": "15 AI-powered skills for Unity 6+ development: code generation, testing, debugging, shaders, multiplayer, DOTS, UI Toolkit, performance audits, and more.",
+  "author": {
+    "name": "Julian Kerignard",
+    "url": "https://github.com/JulianKerignard"
+  },
+  "repository": "https://github.com/JulianKerignard/Unity-Skills",
+  "homepage": "https://github.com/JulianKerignard/Unity-Skills",
+  "license": "MIT",
+  "keywords": [
+    "unity",
+    "unity6",
+    "gamedev",
+    "csharp",
+    "urp",
+    "hdrp",
+    "dots",
+    "ecs",
+    "netcode",
+    "addressables",
+    "ui-toolkit",
+    "shader",
+    "cicd"
+  ]
+}

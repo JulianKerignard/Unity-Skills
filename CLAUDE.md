@@ -9,19 +9,34 @@ A collection of 15 AI-powered skills for Unity 6+ development. Each skill is a s
 ## Repository Structure
 
 ```
-unity/                  # Reference skill (loaded for any Unity question)
-  SKILL.md              # Entry point (~330L) — architecture, patterns, decisions
-  references/           # Deep-dive reference files
-    architecture.md     # Patterns: SO events, state machines, service locator, MVP, UITK, Cinemachine
-    csharp-patterns.md  # C# conventions, lifecycle, async Awaitable, C# 9 features
-    performance.md      # CPU/GPU/memory budgets, profiling, mobile targets
-    project-structure.md # Folder organization, naming, import settings, asmdef
-    specialized.md      # Animation, 2D, Shader/VFX Graph, physics, AI/Inference Engine
-    workflow.md         # Git, testing, CI/CD, Build Profiles
+.claude-plugin/
+  plugin.json           # Plugin manifest — enables `claude plugin install`
 
-unity-<name>/           # 14 execution skills (one per workflow)
-  SKILL.md              # Workflow entry (~150-200L): decision tree, steps, rules
-  references/           # Optional: templates, patterns, recipes loaded on demand
+skills/
+  unity/                # Reference skill (loaded for any Unity question)
+    SKILL.md            # Entry point (~330L) — architecture, patterns, decisions
+    references/         # Deep-dive reference files
+      architecture.md   # Patterns: SO events, state machines, service locator, MVP, UITK, Cinemachine
+      csharp-patterns.md # C# conventions, lifecycle, async Awaitable, C# 9 features
+      performance.md    # CPU/GPU/memory budgets, profiling, mobile targets
+      project-structure.md # Folder organization, naming, import settings, asmdef
+      specialized.md    # Animation, 2D, Shader/VFX Graph, physics, AI/Inference Engine
+      workflow.md       # Git, testing, CI/CD, Build Profiles
+
+  unity-<name>/         # 14 execution skills (one per workflow)
+    SKILL.md            # Workflow entry (< 200L): decision tree, steps, rules
+    references/         # Templates, patterns, recipes loaded on demand
+```
+
+## Installation
+
+```bash
+# npx (une commande, multi-agent compatible)
+npx skills add JulianKerignard/Unity-Skills
+
+# ou plugin natif Claude Code
+claude plugin marketplace add JulianKerignard/Unity-Skills
+claude plugin install unity-skills
 ```
 
 ## Skill Architecture
@@ -49,21 +64,21 @@ Every SKILL.md follows a strict format:
 
 | Skill | Command | Type |
 |-------|---------|------|
-| `unity/` | (auto-loaded) | Reference — comprehensive Unity guide |
-| `unity-code-gen/` | `/unity-code-gen` | Generate production C# + NUnit tests |
-| `unity-test/` | `/test` | NUnit tests (EditMode, PlayMode, async) |
-| `unity-debug/` | `/debug` | Systematic bug diagnosis with decision trees |
-| `unity-rapid-proto/` | `/proto` | Instant gameplay prototyping |
-| `unity-perf-audit/` | `/perf-audit` | Static code analysis for 30+ anti-patterns |
-| `unity-editor-tools/` | `/editor` | Custom inspectors, windows, drawers (IMGUI + UITK) |
-| `unity-refactor/` | `/unity-refactor` | Safe incremental refactoring |
-| `unity-shader-gen/` | `/shader` | HLSL/ShaderLab shaders (URP/HDRP/Built-in) |
-| `unity-build-config/` | `/build-config` | CI/CD, build scripts, Build Profiles |
-| `unity-ui-toolkit/` | `/uitk` | UI Toolkit (UXML + USS + C# bindings) |
-| `unity-multiplayer/` | `/netcode` | Netcode for GameObjects, Lobby, Relay |
-| `unity-addressables/` | `/addressables` | Async asset loading, memory management |
-| `unity-animation/` | `/anim` | Animator, IK, Timeline, Playables API |
-| `unity-dots/` | `/dots` | ECS, Job System, Burst Compiler |
+| `skills/unity/` | (auto-loaded) | Reference — comprehensive Unity guide |
+| `skills/unity-code-gen/` | `/unity-code-gen` | Generate production C# + NUnit tests |
+| `skills/unity-test/` | `/test` | NUnit tests (EditMode, PlayMode, async) |
+| `skills/unity-debug/` | `/debug` | Systematic bug diagnosis with decision trees |
+| `skills/unity-rapid-proto/` | `/proto` | Instant gameplay prototyping |
+| `skills/unity-perf-audit/` | `/perf-audit` | Static code analysis for 30+ anti-patterns |
+| `skills/unity-editor-tools/` | `/editor` | Custom inspectors, windows, drawers (IMGUI + UITK) |
+| `skills/unity-refactor/` | `/unity-refactor` | Safe incremental refactoring |
+| `skills/unity-shader-gen/` | `/shader` | HLSL/ShaderLab shaders (URP/HDRP/Built-in) |
+| `skills/unity-build-config/` | `/build-config` | CI/CD, build scripts, Build Profiles |
+| `skills/unity-ui-toolkit/` | `/uitk` | UI Toolkit (UXML + USS + C# bindings) |
+| `skills/unity-multiplayer/` | `/netcode` | Netcode for GameObjects, Lobby, Relay |
+| `skills/unity-addressables/` | `/addressables` | Async asset loading, memory management |
+| `skills/unity-animation/` | `/anim` | Animator, IK, Timeline, Playables API |
+| `skills/unity-dots/` | `/dots` | ECS, Job System, Burst Compiler |
 
 ## Editing Skills
 
