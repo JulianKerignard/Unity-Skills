@@ -175,6 +175,7 @@ public void SetMovement(Vector2 input)
 - `/unity-code-gen` -- generer des StateMachineBehaviour et boilerplate Animator
 - `/proto` -- prototyper rapidement avec des animations simples
 - `/unity-dots` -- DOTS animation pour des milliers d'entites animees
+- `/2d` -- animation 2D avec Sprite Library et Sprite Swap
 
 ## Troubleshooting
 

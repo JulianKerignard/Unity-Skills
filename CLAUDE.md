@@ -60,7 +60,7 @@ Every SKILL.md follows a strict format:
 - **Cross-references**: Use skill command names (`/unity-code-gen`, `/uitk`, `/dots`) and always maintain bidirectional links between related skills.
 - **No code execution**: Skills are pure documentation. They don't import packages or run anything — they instruct an AI on what to do.
 
-## The 15 Skills
+## The 18 Skills
 
 | Skill | Command | Type |
 |-------|---------|------|
@@ -79,6 +79,9 @@ Every SKILL.md follows a strict format:
 | `skills/unity-addressables/` | `/addressables` | Async asset loading, memory management |
 | `skills/unity-animation/` | `/anim` | Animator, IK, Timeline, Playables API |
 | `skills/unity-dots/` | `/dots` | ECS, Job System, Burst Compiler |
+| `skills/unity-audio/` | `/unity-audio` | Audio system, SFX pooling, AudioMixer, spatial 3D |
+| `skills/unity-2d/` | `/2d` | 2D development, Tilemaps, Light2D, Sprite Atlas |
+| `skills/unity-save/` | `/unity-save` | Save system, persistence, serialization, cloud saves |
 
 ## Editing Skills
 

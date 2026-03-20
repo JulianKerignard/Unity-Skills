@@ -146,6 +146,7 @@ Lister exactement ce qui doit se passer quand on appuie sur Play :
 - Le prototype fonctionne et on veut passer en production ? Utiliser `/unity-code-gen` (Unity Code Gen) pour restructurer avec les bons patterns
 - Bug dans le prototype ? Utiliser `/unity-debug` (Unity Debug)
 - Besoin d'un shader custom pour le prototype ? Utiliser `/shader` (Unity Shader Generator)
+- Prototype 2D (platformer, top-down) ? Utiliser `/2d` (Unity 2D) pour les patterns detailles
 
 ## Regles strictes
 

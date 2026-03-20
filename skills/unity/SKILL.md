@@ -348,3 +348,6 @@ For multiplayer: think server-authoritative from day one. Validate all inputs on
 | Animation avancee | `/anim` (Unity Animation) |
 | ECS et Jobs | `/dots` (Unity DOTS) |
 | Build et CI/CD | `/build-config` (Unity Build & CI/CD) |
+| Systeme audio | `/unity-audio` (Unity Audio) |
+| Developpement 2D | `/2d` (Unity 2D) |
+| Sauvegarde et persistence | `/unity-save` (Unity Save System) |

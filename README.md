@@ -61,6 +61,9 @@ cp -r Unity-Skills/skills/ .claude/skills/
 
 | Skill | Command | What it does |
 |-------|---------|-------------|
+| [unity-audio](skills/unity-audio/SKILL.md) | `/unity-audio` | Audio system — SFX pooling, music crossfade, AudioMixer, spatial 3D, Audio Random Container |
+| [unity-2d](skills/unity-2d/SKILL.md) | `/2d` | 2D development — Tilemaps, 2D physics, Light2D, Sprite Atlas, platformer/top-down patterns |
+| [unity-save](skills/unity-save/SKILL.md) | `/unity-save` | Save system — JSON/binary serialization, ISaveable, auto-save, versioning, cloud saves |
 | [unity-multiplayer](skills/unity-multiplayer/SKILL.md) | `/netcode` | Netcode for GameObjects — NetworkBehaviour, RPCs, NetworkVariable, Lobby + Relay |
 | [unity-addressables](skills/unity-addressables/SKILL.md) | `/addressables` | Async asset loading, groups, memory management, Resources.Load migration |
 | [unity-animation](skills/unity-animation/SKILL.md) | `/anim` | Animator, IK, Root Motion, Timeline, Playables API, Animation Rigging |
@@ -119,9 +122,9 @@ Each SKILL.md contains:
 
 ## Stats
 
-- **15 skills** (1 reference + 14 execution)
-- **~11,400 lines** of structured instructions across **38 files**
-- **23 reference files** — templates, patterns, recipes
+- **18 skills** (1 reference + 17 execution)
+- **~13,500 lines** of structured instructions across **46 files**
+- **30 reference files** — templates, patterns, recipes
 - **30+ C# code templates** — MonoBehaviour, SO Events, State Machines, Pools, Async Awaitable, NetworkBehaviour, ISystem, Editor tools
 - **8 shader recipes** — dissolve, outline, toon, hologram, force field, water, triplanar, vertex displacement
 - **30+ anti-patterns** with Grep detection rules
