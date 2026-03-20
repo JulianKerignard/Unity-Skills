@@ -97,71 +97,11 @@ Ne scorer que les problemes reellement trouves dans le code. Ne jamais inventer 
 
 ### Etape 4 : Produire le rapport
 
-Format du rapport :
-
-```markdown
-## Rapport d'audit performance
-
-**Projet** : [nom]
-**Fichiers analyses** : [nombre]
-**Score global** : [score] / [seuil]
-**Verdict** : [Propre | Acceptable | Problematique | Critique]
-
-### Problemes detectes
-
-| # | Probleme | Severite | Fichier:Ligne | Description |
-|---|----------|----------|---------------|-------------|
-| 1 | GetComponent dans Update | Critical | PlayerController.cs:45 | `GetComponent<Rigidbody>()` appele chaque frame |
-| 2 | FindObjectOfType en runtime | Critical | EnemyManager.cs:23 | `FindObjectOfType<Player>()` dans Start (acceptable) vs Update (critique) |
-| 3 | Camera.main dans Update | Medium | CameraFollow.cs:12 | `Camera.main` fait un Find interne chaque appel |
-
-### Resume par severite
-
-| Severite | Nombre | Score |
-|----------|--------|-------|
-| Critical | 2 | 20 |
-| High | 3 | 15 |
-| Medium | 5 | 10 |
-| Low | 2 | 2 |
-| **Total** | **12** | **47** |
-```
+Format du rapport : tableau avec colonnes `#`, `Probleme`, `Severite`, `Fichier:Ligne`, `Description`. Grouper par severite (Critical > High > Medium > Low). Ajouter un resume par severite (nombre + score). Inclure un score global avec le verdict (Propre / Acceptable / Problematique / Critique).
 
 ### Etape 5 : Proposer les 5 fixes prioritaires
 
-Pour chaque fix, montrer le code avant et apres. Prendre les problemes par ordre de severite (Critical d'abord).
-
-Format :
-
-```markdown
-### Fix 1 : Cache GetComponent dans PlayerController.cs
-
-**Severite** : Critical
-**Ligne** : 45
-**Impact** : Elimine ~1 allocation GC par frame
-
-**Avant :**
-```csharp
-void Update()
-{
-    GetComponent<Rigidbody>().AddForce(Vector3.up * jumpForce);
-}
-```
-
-**Apres :**
-```csharp
-private Rigidbody _rb;
-
-void Awake()
-{
-    _rb = GetComponent<Rigidbody>();
-}
-
-void Update()
-{
-    _rb.AddForce(Vector3.up * jumpForce);
-}
-```
-```
+Pour chaque fix, montrer le code avant et apres. Prendre les problemes par ordre de severite (Critical d'abord). Format : titre, severite, ligne, impact, puis code avant/apres.
 
 Patterns de fix courants :
 
@@ -178,16 +118,6 @@ Patterns de fix courants :
 | new WaitForSeconds repete | Cache `static readonly WaitForSeconds` |
 | Event sans unsubscribe | Ajouter `-=` dans `OnDisable()` ou `OnDestroy()` |
 | Resources.Load sans Unload | Ajouter `Resources.UnloadUnusedAssets()` apres usage ou passer a Addressables |
-
-## Reference : budgets performance
-
-| Plateforme | FPS cible | Draw calls | Triangles | Memoire |
-|------------|----------|------------|-----------|---------|
-| Mobile | 30-60 | < 200 | < 100K | < 1 GB |
-| Console | 30-60 | < 2000 | < 2M | < 4 GB |
-| PC | 60-144 | < 5000 | < 10M | < 8 GB |
-
-Ces budgets servent de reference pour contextualiser les problemes trouves. Ne pas les citer si aucun probleme GPU/rendering n'est detecte.
 
 ## Regles strictes
 

@@ -71,15 +71,10 @@ Pertinent uniquement pour les jeux qui shippent un binaire serveur separe. Pas n
 ### Step 1 — Setup NetworkManager
 
 ```csharp
-// Scene setup:
-// 1. GameObject "NetworkManager" avec composant NetworkManager
-// 2. Ajouter UnityTransport comme NetworkTransport
-// 3. Assigner le Player Prefab (doit avoir NetworkObject)
-
-// Demarrer une session depuis votre UI:
-public void StartAsHost()  => NetworkManager.Singleton.StartHost();
-public void StartAsServer()=> NetworkManager.Singleton.StartServer();
-public void StartAsClient()=> NetworkManager.Singleton.StartClient();
+// Demarrer une session:
+NetworkManager.Singleton.StartHost();   // host mode
+NetworkManager.Singleton.StartServer(); // dedicated
+NetworkManager.Singleton.StartClient(); // client
 ```
 
 ### Step 2 — Creer un NetworkBehaviour
@@ -135,62 +130,12 @@ public class PlayerController : NetworkBehaviour
 
 ### Step 3 — Setup Lobby + Relay (optionnel, pour jeu en ligne)
 
-```csharp
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
-using Unity.Services.Lobbies;
-using Unity.Services.Lobbies.Models;
-using Unity.Services.Relay;
-using UnityEngine;
+Code complet Lobby + Relay dans `references/netcode-patterns.md`.
 
-public class LobbyManager : MonoBehaviour
-{
-    private async void Start()
-    {
-        await UnityServices.InitializeAsync();
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
-    }
-
-    public async Task<string> CreateLobby(string name, int maxPlayers)
-    {
-        var allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
-        var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-
-        var options = new CreateLobbyOptions
-        {
-            Data = new Dictionary<string, DataObject>
-            {
-                { "joinCode", new DataObject(DataObject.VisibilityOptions.Public, joinCode) }
-            }
-        };
-
-        var lobby = await LobbyService.Instance.CreateLobbyAsync(name, maxPlayers, options);
-
-        // Setup Relay transport
-        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        transport.SetRelayServerData(allocation);
-        NetworkManager.Singleton.StartHost();
-
-        return lobby.Id;
-    }
-
-    public async Task JoinLobby(string lobbyId)
-    {
-        var lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
-        var joinCode = lobby.Data["joinCode"].Value;
-
-        var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
-
-        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        transport.SetRelayServerData(allocation);
-        NetworkManager.Singleton.StartClient();
-    }
-}
-```
+Workflow :
+1. `UnityServices.InitializeAsync()` + `SignInAnonymouslyAsync()`
+2. Host : `RelayService.Instance.CreateAllocationAsync()` → get join code → `StartHost()`
+3. Client : `RelayService.Instance.JoinAllocationAsync(joinCode)` → `StartClient()`
 
 ## Regles strictes
 
@@ -218,6 +163,7 @@ public class LobbyManager : MonoBehaviour
 - `/unity-code-gen` — generer des NetworkBehaviour types
 - `/unity-build-config` — configuration de build pour dedicated server
 - `/unity-test` — tester avec plusieurs instances en parallele
+- Bug reseau difficile a tracer ? Utiliser `/unity-debug` (Unity Debug)
 
 ## Troubleshooting
 

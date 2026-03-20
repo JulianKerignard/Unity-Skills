@@ -152,49 +152,11 @@ Exemples :
 9. **TOUJOURS** utiliser `[TestCase]` pour les tests parametriques plutot que dupliquer
 10. **JAMAIS** de dependance entre tests — chaque test est independant et idempotent
 
-## Structure de dossiers recommandee
-
-```
-Assets/
-+-- Scripts/
-|   +-- Runtime/
-|   |   +-- Game.Runtime.asmdef
-|   |   +-- Player/
-|   |   +-- Combat/
-|   |   +-- Utils/
-+-- Tests/
-    +-- EditMode/
-    |   +-- Game.Tests.EditMode.asmdef
-    |   +-- HealthCalculatorTests.cs
-    |   +-- WeaponDataTests.cs
-    +-- PlayMode/
-        +-- Game.Tests.PlayMode.asmdef
-        +-- PlayerHealthTests.cs
-        +-- EnemyAITests.cs
-```
-
 ## Mocking sans framework externe
 
-Unity n'inclut pas de framework de mocking. Utiliser des **interfaces + test doubles manuels** :
+Unity n'inclut pas de framework de mocking. Utiliser des **interfaces + test doubles manuels** : creer une interface (ex: `IInputProvider`), implementer un mock avec des proprietes settables, injecter via `[SerializeField]` ou setter public.
 
-```csharp
-public interface IInputProvider
-{
-    Vector2 GetMovement();
-    bool GetJump();
-}
-
-// Test double
-public class MockInputProvider : IInputProvider
-{
-    public Vector2 Movement { get; set; }
-    public bool Jump { get; set; }
-    public Vector2 GetMovement() => Movement;
-    public bool GetJump() => Jump;
-}
-```
-
-Injecter l'interface dans le MonoBehaviour via `[SerializeField]` ou setter public.
+Exemples complets dans `references/test-templates.md`.
 
 ## Skills connexes
 

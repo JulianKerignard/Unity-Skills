@@ -29,8 +29,6 @@ Generation de code C# Unity production-ready. Analyse le projet existant, choisi
 3. Appliquer l'arbre de decision pour choisir le pattern
 4. Generer le code + tests dans les bons repertoires
 
----
-
 ## Arbre de decision
 
 ```
@@ -70,8 +68,6 @@ La chose a creer...
 └─ Milliers d'entites similaires a traiter en parallele ?
    └─ OUI → ECS (DOTS) — hors scope de cette skill
 ```
-
----
 
 ## Guide etape par etape
 
@@ -150,25 +146,11 @@ Assets/Tests/EditMode/  → tests logique (assembly ref: Game.Core, etc.)
 Assets/Tests/PlayMode/  → tests comportement (assembly ref + UnityEngine.TestRunner)
 ```
 
-Si le projet a deja un dossier de tests, respecter sa structure.
-
 ### Etape 6 — Placer les fichiers
 
-- Respecter les assembly definitions existantes
-- Placer dans le module correspondant (`Scripts/Player/`, `Scripts/Combat/`, etc.)
-- Si le module n'existe pas, le creer en suivant la convention existante
+- Respecter les assembly definitions et la structure de dossiers existante
 - Les tests vont dans le dossier `Tests/` miroir
-
----
-
-## Format de sortie
-
-Pour chaque generation, produire :
-1. Le(s) fichier(s) C# source dans le bon repertoire
-2. Le(s) fichier(s) de test NUnit correspondants
-3. Un resume : pattern choisi, fichiers crees, dependances identifiees
-
----
+- Produire : fichier(s) C# source, tests NUnit, resume (pattern choisi, fichiers crees)
 
 ## Regles strictes
 
@@ -212,6 +194,4 @@ Pour chaque generation, produire :
 | Le projet utilise des Singletons partout | Ne pas en ajouter de nouveaux, proposer une migration progressive vers SO/Service Locator |
 | Conflit de nommage avec un package tiers | Prefixer le namespace avec le nom du projet |
 
----
-
-Pour les templates de code detailles, voir `references/code-templates.md`.
+Templates de code detailles : voir `references/code-templates.md`.

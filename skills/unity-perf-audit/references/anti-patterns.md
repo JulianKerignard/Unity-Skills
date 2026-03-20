@@ -100,3 +100,13 @@ IEnumerator Spawn()
 ```
 
 **Detection :** Grep `new WaitForSeconds\(` et verifier si la coroutine contient une boucle `while` ou est lancee avec `InvokeRepeating` / appelee depuis `Update`. Si la coroutine ne s'execute qu'une fois (ex: sequence de tutoriel), l'allocation est negligeable -- ne pas reporter.
+
+## Budgets performance par plateforme
+
+Reference pour contextualiser les problemes trouves. Ne pas citer si aucun probleme GPU/rendering n'est detecte.
+
+| Plateforme | FPS cible | Draw calls | Triangles | Memoire |
+|------------|----------|------------|-----------|---------|
+| Mobile | 30-60 | < 200 | < 100K | < 1 GB |
+| Console | 30-60 | < 2000 | < 2M | < 4 GB |
+| PC | 60-144 | < 5000 | < 10M | < 8 GB |

@@ -23,25 +23,9 @@ Cette skill genere des outils personnalises pour l'editeur Unity afin d'accelere
 4. Generer le script avec le template adapte
 5. Verifier visuellement dans Unity
 
-## Guide etape par etape
+## Arbre de decision
 
-### Etape 1 : Identifier le workflow a accelerer
-
-Analyser le besoin utilisateur. Scanner les composants existants pour comprendre le contexte :
-
-```
-Glob : Assets/Scripts/**/*.cs
-Grep : "class.*MonoBehaviour" dans les fichiers trouves
-```
-
-Poser les questions :
-- Quel composant ou donnee doit etre plus facile a editer ?
-- Quelle action repetitive doit etre automatisee ?
-- Quel feedback visuel manque dans l'Inspector ?
-
-### Etape 2 : Choisir le type d'outil
-
-Arbre de decision :
+Quel type d'outil editor creer ?
 
 | Besoin | Type | Classe de base |
 |--------|------|----------------|
@@ -52,7 +36,20 @@ Arbre de decision :
 | Creer un assistant etape par etape | `ScriptableWizard` | `ScriptableWizard` |
 | Traiter les assets a l'import | `AssetPostprocessor` | `AssetPostprocessor` |
 
-### Etape 3 : Verifier la structure assembly Editor
+## Guide etape par etape
+
+### Etape 1 : Identifier le workflow a accelerer
+
+Analyser le besoin utilisateur. Scanner les composants existants :
+
+```
+Glob : Assets/Scripts/**/*.cs
+Grep : "class.*MonoBehaviour" dans les fichiers trouves
+```
+
+Questions cles : quel composant editer plus facilement ? Quelle action automatiser ? Quel feedback visuel manque ?
+
+### Etape 2 : Verifier la structure assembly Editor
 
 Avant de generer du code, verifier que l'infrastructure Editor existe :
 
@@ -79,7 +76,7 @@ Structure du fichier `Game.Editor.asmdef` :
 
 Si aucun `Game.Runtime.asmdef` n'existe, verifier avec Glob dans `Assets/Scripts/` et en creer un si necessaire.
 
-### Etape 4 : Generer le script editor
+### Etape 3 : Generer le script editor
 
 Templates disponibles dans `references/editor-templates.md` :
 
@@ -93,7 +90,7 @@ Templates disponibles dans `references/editor-templates.md` :
 
 **Pour Unity 6+**, preferer UI Toolkit a IMGUI pour les EditorWindow et CustomEditor complexes. IMGUI reste acceptable pour les PropertyDrawer simples.
 
-### Etape 5 : Verification visuelle
+### Etape 4 : Verification visuelle
 
 Apres generation du script :
 
