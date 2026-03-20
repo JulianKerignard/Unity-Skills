@@ -70,7 +70,7 @@ Creer le systeme base sur ScriptableObjects :
 - `AudioCueEventChannelSO` : canal d'evenement pour decoupler les demandes de lecture
 - `AudioManager` MonoBehaviour : ecoute le canal, gere le pool de SoundEmitters
 
-Voir `references/audio-patterns.md` pour l'implementation complete.
+Voir `references/audio-patterns.md` pour l'implementation complete (AudioCueSO, SoundEmitter, pool, crossfade).
 
 ### Etape 3 : Configurer les import settings
 
@@ -89,6 +89,9 @@ Selon l'arbre de decision :
 - **Musique** : crossfade entre 2 AudioSources via `Awaitable`
 - **Ambiance** : AudioSource 3D avec trigger zones
 - **Spatialisation** : configurer rolloff, min/max distance, doppler
+- **AudioMixer Snapshots** : transitions d'ambiance (Combat, Pause, Underwater)
+
+Voir `references/audio-advanced.md` pour les patterns Mixer snapshots, spatial 3D et Audio Random Container.
 
 ### Etape 5 : Tester et profiler
 

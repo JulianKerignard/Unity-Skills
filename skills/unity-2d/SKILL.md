@@ -31,7 +31,7 @@ Type de jeu 2D ?
 |
 +-- Platformer ?
 |   +-- Classique ----------> Rigidbody2D + Tilemap + Coyote time
-|   |                         (voir references/2d-patterns.md)
+|   |                         (voir references/2d-patterns.md et 2d-advanced.md)
 |   +-- Metroidvania -------> idem + abilities unlock
 |                              + Cinemachine Confiner2D par zone
 |

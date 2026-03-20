@@ -59,7 +59,6 @@ public class AudioCueEventChannelSO : ScriptableObject
 ### SoundEmitter : wrapper AudioSource poolable
 
 ```csharp
-using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -98,10 +97,7 @@ public class SoundEmitter : MonoBehaviour
         source.clip = null;
     }
 
-    public void SetPosition(Vector3 position)
-    {
-        transform.position = position;
-    }
+    public void SetPosition(Vector3 position) => transform.position = position;
 
     public void Configure3D(float spatialBlend, float minDistance, float maxDistance)
     {
@@ -121,30 +117,16 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
-    [Header("Config")]
     [SerializeField] private int poolSize = 16;
     [SerializeField] private SoundEmitter emitterPrefab;
-
-    [Header("Event Channel")]
     [SerializeField] private AudioCueEventChannelSO sfxChannel;
 
     private readonly Queue<SoundEmitter> availableEmitters = new();
     private readonly List<SoundEmitter> activeEmitters = new();
 
-    private void Awake()
-    {
-        InitPool();
-    }
-
-    private void OnEnable()
-    {
-        sfxChannel.OnAudioCueRequested += HandleAudioCueRequested;
-    }
-
-    private void OnDisable()
-    {
-        sfxChannel.OnAudioCueRequested -= HandleAudioCueRequested;
-    }
+    private void Awake() => InitPool();
+    private void OnEnable() => sfxChannel.OnAudioCueRequested += HandleAudioCueRequested;
+    private void OnDisable() => sfxChannel.OnAudioCueRequested -= HandleAudioCueRequested;
 
     private void InitPool()
     {
@@ -178,8 +160,7 @@ public class AudioManager : MonoBehaviour
             activeEmitters.Add(emitter);
             return emitter;
         }
-
-        // Voler l'emitter actif le plus ancien
+        // Steal oldest active emitter
         if (activeEmitters.Count > 0)
         {
             SoundEmitter oldest = activeEmitters[0];
@@ -188,18 +169,12 @@ public class AudioManager : MonoBehaviour
             activeEmitters.Add(oldest);
             return oldest;
         }
-
         return null;
     }
 
     private System.Collections.IEnumerator ReturnAfterPlay(SoundEmitter emitter, float duration)
     {
         yield return new WaitForSeconds(duration + 0.1f);
-        ReturnEmitter(emitter);
-    }
-
-    private void ReturnEmitter(SoundEmitter emitter)
-    {
         emitter.Stop();
         emitter.gameObject.SetActive(false);
         activeEmitters.Remove(emitter);
@@ -219,7 +194,6 @@ public class Weapon : MonoBehaviour
     public void Fire()
     {
         sfxChannel.RaiseEvent(fireSound, transform.position);
-        // ... logique de tir
     }
 }
 ```
@@ -251,7 +225,6 @@ public class SFXPool : MonoBehaviour
     public void PlaySFX(AudioClip clip, Vector3 position, float volume = 1f)
     {
         if (pool.Count == 0) return;
-
         AudioSource src = pool.Dequeue();
         src.transform.position = position;
         src.PlayOneShot(clip, volume);
@@ -311,10 +284,8 @@ public class MusicManager : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / crossfadeDuration);
-
             fadeOut.volume = Mathf.Lerp(startVolume, 0f, t);
             fadeIn.volume = Mathf.Lerp(0f, 1f, t);
-
             await Awaitable.NextFrameAsync();
         }
 
@@ -331,167 +302,3 @@ public class MusicManager : MonoBehaviour
     }
 }
 ```
-
----
-
-## 4. AudioMixer Snapshots
-
-Transitions entre ambiances sonores via snapshots :
-
-```csharp
-using UnityEngine;
-using UnityEngine.Audio;
-
-[CreateAssetMenu(fileName = "AudioMoodConfig", menuName = "Audio/Mood Config")]
-public class AudioMoodConfigSO : ScriptableObject
-{
-    [System.Serializable]
-    public struct MoodEntry
-    {
-        public string name;
-        public AudioMixerSnapshot snapshot;
-        public float transitionTime;
-    }
-
-    [SerializeField] private MoodEntry[] moods;
-
-    public void TransitionTo(string moodName)
-    {
-        foreach (var mood in moods)
-        {
-            if (mood.name == moodName)
-            {
-                mood.snapshot.TransitionTo(mood.transitionTime);
-                return;
-            }
-        }
-        Debug.LogWarning($"Mood '{moodName}' not found in {name}");
-    }
-}
-```
-
-**Configuration des snapshots dans l'AudioMixer :**
-
-| Snapshot | SFX | Music | Ambiance | Notes |
-|----------|-----|-------|----------|-------|
-| Normal | 0 dB | -6 dB | -10 dB | Gameplay standard |
-| Combat | 0 dB | -12 dB | -20 dB | SFX prioritaires |
-| Underwater | -3 dB | -15 dB | 0 dB | Low-pass sur Master |
-| Pause | -80 dB | -6 dB | -80 dB | Musique seule |
-| Cutscene | -80 dB | 0 dB | -6 dB | Dialogues + musique |
-
-```csharp
-// Usage
-[SerializeField] private AudioMoodConfigSO moodConfig;
-
-public void EnterCombat() => moodConfig.TransitionTo("Combat");
-public void ExitCombat() => moodConfig.TransitionTo("Normal");
-public void PauseGame() => moodConfig.TransitionTo("Pause");
-```
-
----
-
-## 5. Spatial Audio 3D Setup
-
-Configuration d'un AudioSource pour le son 3D :
-
-```csharp
-using UnityEngine;
-
-public static class AudioSpatialSetup
-{
-    /// <summary>
-    /// Configure un AudioSource pour le son 3D avec des parametres standards.
-    /// </summary>
-    public static void Configure3D(
-        AudioSource source,
-        float minDistance = 1f,
-        float maxDistance = 50f,
-        float dopplerLevel = 0.5f,
-        AudioRolloffMode rolloff = AudioRolloffMode.Logarithmic)
-    {
-        source.spatialBlend = 1f; // Full 3D
-        source.minDistance = minDistance;
-        source.maxDistance = maxDistance;
-        source.dopplerLevel = dopplerLevel;
-        source.rolloffMode = rolloff;
-        source.spread = 0f; // Point source (augmenter pour source large)
-    }
-
-    /// <summary>
-    /// Presets par type de son.
-    /// </summary>
-    public static void ApplyPreset(AudioSource source, SpatialPreset preset)
-    {
-        switch (preset)
-        {
-            case SpatialPreset.Footstep:
-                Configure3D(source, minDistance: 1f, maxDistance: 15f, dopplerLevel: 0f);
-                break;
-            case SpatialPreset.Gunshot:
-                Configure3D(source, minDistance: 5f, maxDistance: 100f, dopplerLevel: 0.3f);
-                break;
-            case SpatialPreset.Explosion:
-                Configure3D(source, minDistance: 10f, maxDistance: 200f, dopplerLevel: 0f);
-                source.spread = 60f;
-                break;
-            case SpatialPreset.Voice:
-                Configure3D(source, minDistance: 1f, maxDistance: 20f, dopplerLevel: 0f);
-                break;
-            case SpatialPreset.Ambiance:
-                Configure3D(source, minDistance: 5f, maxDistance: 30f, dopplerLevel: 0f);
-                source.spread = 180f;
-                break;
-        }
-    }
-}
-
-public enum SpatialPreset
-{
-    Footstep,
-    Gunshot,
-    Explosion,
-    Voice,
-    Ambiance
-}
-```
-
----
-
-## 6. Audio Random Container (Unity 6.0+)
-
-Le **Audio Random Container** est un asset natif Unity 6+ qui remplace les scripts de randomisation manuelle. Configuration via l'Inspector uniquement (pas de code necessaire).
-
-### Creation
-
-1. **Project** > clic droit > **Create > Audio > Audio Random Container**
-2. Glisser les clips variants dans la liste (ex: 5 variantes de footstep)
-3. Configurer :
-   - **Trigger Mode** : `On Play` (lance un clip au hasard) ou `Automatic` (enchaine)
-   - **Avoid Repeating Last** : nombre de clips a eviter en repetition (ex: 2)
-   - **Volume / Pitch Randomization** : plage min/max
-   - **Output** : assigner le AudioMixerGroup cible
-
-### Usage en code
-
-```csharp
-// L'Audio Random Container se comporte comme un AudioResource
-[SerializeField] private AudioResource footstepContainer; // Glisser le container ici
-
-private AudioSource source;
-
-private void PlayFootstep()
-{
-    source.resource = footstepContainer;
-    source.Play();
-}
-```
-
-### Quand utiliser
-
-| Situation | Solution |
-|-----------|----------|
-| Footsteps avec 3-8 variantes | Audio Random Container |
-| Impacts avec pitch variable | Audio Random Container |
-| SFX unique sans variation | AudioCueSO classique |
-| Logique conditionnelle complexe | Code custom (AudioCueSO) |

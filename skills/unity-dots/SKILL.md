@@ -188,6 +188,7 @@ public void OnUpdate(ref SystemState state)
 
 ## References
 
-- Voir `references/ecs-patterns.md` pour les patterns avances (queries, jobs, NativeContainers, hybride)
+- Voir `references/ecs-patterns.md` pour les patterns de base (authoring, baking, queries, jobs)
+- Voir `references/ecs-advanced.md` pour les patterns avances (Burst, NativeContainers, hybride, Aspects, DynamicBuffer)
 - [Unity DOTS documentation officielle](https://docs.unity3d.com/Packages/com.unity.entities@latest)
 - [Unity DOTS samples](https://github.com/Unity-Technologies/EntityComponentSystemSamples)

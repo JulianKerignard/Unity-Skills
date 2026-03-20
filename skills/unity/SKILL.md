@@ -27,8 +27,9 @@ Battle-tested best practices for Unity, from project setup to shipping. This is 
 | Hunting a performance issue or optimizing | `references/performance.md` |
 | Designing game architecture, patterns, systems | `references/architecture.md` |
 | Setting up Git, testing, CI/CD, or building | `references/workflow.md` |
-| Animation, 2D, Shader/VFX Graph, debugging, localization, accessibility | `references/specialized.md` |
-| UI Toolkit or Cinemachine setup | `references/architecture.md` (§9, §10) |
+| Animation, 2D, Shader/VFX Graph | `references/specialized.md` |
+| Debugging, localization, accessibility, AI/Inference Engine | `references/systems.md` |
+| UI Toolkit or Cinemachine setup | `references/architecture-advanced.md` |
 
 Read the relevant reference *before* writing code — the patterns there will save you significant rework.
 

@@ -40,10 +40,10 @@ Que sauvegarder ?
 +-- Cloud sync ?
 |   +-- Unity Gaming Services --> UGS Cloud Save
 |   +-- Cross-platform natif --> Platform Toolkit (Unity 6.3+)
-|   +-- Hybride (local + cloud) -> ISaveStorage abstraction
+|   +-- Hybride (local + cloud) -> ISaveStorage abstraction (voir `references/save-advanced.md`)
 |
 +-- Sensible (anti-cheat) ?
-    +-- Encryption AES + hash d'integrite
+    +-- Encryption AES + hash d'integrite (voir `references/save-advanced.md`)
 ```
 
 ## Guide etape par etape
@@ -64,7 +64,7 @@ Que sauvegarder ?
 
 - Definir `ISaveable` : `SaveKey`, `CaptureState()`, `RestoreState(object)`
 - Creer `SaveData` avec champ `version`, `Dictionary<string, object>`, metadata
-- Voir `references/save-templates.md` pour le code complet
+- Voir `references/save-templates.md` pour le code complet (ISaveable, SaveData, SaveManager)
 
 ### Etape 3 — Implementer SaveManager
 
@@ -79,7 +79,7 @@ Que sauvegarder ?
 - Dirty flag : chaque `ISaveable` signale ses changements
 - Timer configurable (60-120s par defaut)
 - Sauvegarder sur `OnApplicationPause(true)` et changement de scene
-- Voir `references/save-templates.md` section Auto-Save
+- Voir `references/save-advanced.md` section Auto-Save
 
 ### Etape 5 — Tester le cycle save/load
 

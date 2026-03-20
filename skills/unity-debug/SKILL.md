@@ -32,7 +32,7 @@ Diagnostic et correction systematique de bugs Unity. Trace le chemin d'execution
 
 ---
 
-## Classification des bugs
+## Arbre de decision
 
 ```
 Le bug est...

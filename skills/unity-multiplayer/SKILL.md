@@ -172,7 +172,7 @@ Workflow :
 | "NetworkObject is not spawned" | Verifier que le prefab a un composant NetworkObject et est spawne via NetworkManager |
 | ServerRpc pas appele | Verifier le suffixe `ServerRpc` dans le nom de methode et que l'appelant est le owner (ou `RequireOwnership = false`) |
 | Desync d'etat | Utiliser NetworkVariable au lieu de variables locales. Verifier les read/write permissions |
-| Latence visible | Implementer client-side prediction (voir references/netcode-patterns.md) |
+| Latence visible | Implementer client-side prediction (voir references/netcode-advanced.md) |
 | "Object already spawned" | Ne pas appeler Spawn() sur un objet deja spawne. Verifier le flow de spawn |
 | Client ne se connecte pas | Verifier l'adresse/port dans UnityTransport. En Relay, verifier le join code |
 | NetworkVariable pas mise a jour | Seul le server (ou owner selon WritePermission) peut ecrire. Verifier les permissions |
