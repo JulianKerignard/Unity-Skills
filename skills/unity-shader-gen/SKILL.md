@@ -127,7 +127,6 @@ Pass **requis** pour que l'objet projette des ombres en URP. Template dans `refe
 
 - Le shader est pour un prototype rapide ? Utiliser `/proto` (Unity Rapid Proto) pour le setup scene
 - Configurer le build apres les shaders ? Utiliser `/build-config` (Unity Build & CI/CD Configurator)
-- Problemes de performance shader ? Utiliser `/unity-perf-audit` pour l'audit de performance
 - Performance de rendu ? Utiliser `/perf-audit` (Unity Perf Audit)
 
 ## Troubleshooting

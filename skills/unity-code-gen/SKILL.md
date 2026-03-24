@@ -182,6 +182,8 @@ Assets/Tests/PlayMode/  → tests comportement (assembly ref + UnityEngine.TestR
 - Refactorer du code existant ? Utiliser `/unity-refactor` (Unity Refactor)
 - Creer un custom inspector pour le composant genere ? Utiliser `/unity-editor-tools` (Unity Editor Tools)
 - Generer et executer les tests NUnit ? Utiliser `/unity-test` (Unity Test)
+- Generer un systeme audio ? Utiliser `/unity-audio` (Unity Audio)
+- Implementer la sauvegarde ? Utiliser `/unity-save` (Unity Save System)
 
 ## Troubleshooting
 

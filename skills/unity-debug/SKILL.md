@@ -66,7 +66,7 @@ Le bug est...
     +-- ASYNC BUG -> ARBRE ASYNC/AWAITABLE
 ```
 
-## Workflow de diagnostic
+## Guide etape par etape
 
 ### 1 — Collecter les symptomes
 

@@ -29,7 +29,7 @@ Objets scene :
 ## Top-Down 2D
 
 Scripts necessaires :
-- `PlayerMovement2D.cs` : `Rigidbody2D.velocity` avec `Input.GetAxis`, rotation vers la souris avec `Mathf.Atan2`
+- `PlayerMovement2D.cs` : `Rigidbody2D.linearVelocity` avec `Input.GetAxis`, rotation vers la souris avec `Mathf.Atan2`
 - `Bullet.cs` : `transform.Translate(Vector3.up * speed * Time.deltaTime)`, `Destroy(gameObject, 3f)`, `OnTriggerEnter2D` pour degats
 - `EnemyPatrol2D.cs` : mouvement entre waypoints (2 transforms), `OnTriggerEnter2D` avec le joueur pour degats
 

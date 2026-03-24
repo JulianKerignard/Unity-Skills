@@ -5,7 +5,7 @@ interpolation, optimisation bande passante, et test/debugging.
 
 ---
 
-## Object pooling reseau
+## 4. Object pooling reseau
 
 ```csharp
 using Unity.Netcode;

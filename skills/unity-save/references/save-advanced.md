@@ -60,9 +60,10 @@ public class LocalSaveStorage : ISaveStorage
         return await File.ReadAllBytesAsync(path, ct);
     }
 
-    public Awaitable<bool> ExistsAsync(string key, CancellationToken ct = default)
+    public async Awaitable<bool> ExistsAsync(string key, CancellationToken ct = default)
     {
-        return Awaitable.FromResult(File.Exists(GetPath(key)));
+        await Awaitable.NextFrameAsync(ct);
+        return File.Exists(GetPath(key));
     }
 
     public async Awaitable DeleteAsync(string key, CancellationToken ct = default)

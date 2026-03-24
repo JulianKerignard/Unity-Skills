@@ -141,13 +141,6 @@ Lister exactement ce qui doit se passer quand on appuie sur Play :
 | Runner / Endless | RunnerPlayer + ObstacleSpawner + ScoreManager | Capsule auto-avance, 3 lanes |
 | Tower Defense | Turret + EnemyPath + TurretPlacer | Waypoints, OverlapSphere, InvokeRepeating |
 
-## Skills connexes
-
-- Le prototype fonctionne et on veut passer en production ? Utiliser `/unity-code-gen` (Unity Code Gen) pour restructurer avec les bons patterns
-- Bug dans le prototype ? Utiliser `/unity-debug` (Unity Debug)
-- Besoin d'un shader custom pour le prototype ? Utiliser `/shader` (Unity Shader Generator)
-- Prototype 2D (platformer, top-down) ? Utiliser `/2d` (Unity 2D) pour les patterns detailles
-
 ## Regles strictes
 
 **TOUJOURS :**
@@ -167,6 +160,13 @@ Lister exactement ce qui doit se passer quand on appuie sur Play :
 - De SerializeField sauf si absolument necessaire pour le workflow scene
 - De namespace, d'interface, de classe abstraite, de generics
 - D'asset externe, de package additionnel, d'Asset Store
+
+## Skills connexes
+
+- Le prototype fonctionne et on veut passer en production ? Utiliser `/unity-code-gen` (Unity Code Gen) pour restructurer avec les bons patterns
+- Bug dans le prototype ? Utiliser `/unity-debug` (Unity Debug)
+- Besoin d'un shader custom pour le prototype ? Utiliser `/shader` (Unity Shader Generator)
+- Prototype 2D (platformer, top-down) ? Utiliser `/2d` (Unity 2D) pour les patterns detailles
 
 ## Troubleshooting
 

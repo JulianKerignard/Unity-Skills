@@ -1,6 +1,6 @@
 # Unity Skills for AI Coding Agents
 
-15 AI-powered skills for Unity 6+ development. Works with Claude Code, Cursor, Windsurf, Codex, Gemini CLI and any agent that supports the Skills standard.
+18 AI-powered skills for Unity 6+ development. Works with Claude Code, Cursor, Windsurf, Codex, Gemini CLI and any agent that supports the Skills standard.
 
 Each skill is a structured instruction set — decision trees, step-by-step workflows, strict rules, code templates — that turns your AI assistant into a Unity expert.
 
@@ -108,16 +108,16 @@ Each SKILL.md contains:
    ┌──────────┐ ┌────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
    │  debug   │ │  test  │ │  uitk  │ │  editor  │ │  shader  │ │ netcode  │
    └──────────┘ └────────┘ └────────┘ └──────────┘ └──────────┘ └──────────┘
-        │                                                │
-        v                                                v
-   ┌──────────┐    ┌──────────────┐    ┌──────────┐ ┌──────────┐
-   │perf-audit│    │ addressables │    │build-conf│ │   dots   │
-   └──────────┘    └──────────────┘    └──────────┘ └──────────┘
-        │
-        v
-   ┌──────────┐    ┌──────────────┐
-   │ refactor │    │  animation   │
-   └──────────┘    └──────────────┘
+        │                                    │              │
+        v                                    v              v
+   ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────┐
+   │perf-audit│ │  audio   │ │ addressables │ │build-conf│ │   dots   │
+   └──────────┘ └──────────┘ └──────────────┘ └──────────┘ └──────────┘
+        │                                          │
+        v                                          v
+   ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────┐
+   │ refactor │ │   save   │ │  animation   │ │    2d    │
+   └──────────┘ └──────────┘ └──────────────┘ └──────────┘
 ```
 
 ## Stats

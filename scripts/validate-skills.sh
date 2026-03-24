@@ -42,7 +42,7 @@ done
 check "YAML frontmatter present" "$ERRORS"
 
 # c) Required sections
-SECTIONS=("Ce que fait" "Prerequis" "Demarrage rapide|Quick Start" "Arbre de decision" "Regles strictes" "Skills connexes" "Troubleshooting")
+SECTIONS=("Ce que fait" "Prerequis" "Demarrage rapide|Quick Start" "Arbre de decision" "Guide etape" "Regles strictes" "Skills connexes" "Troubleshooting")
 ERRORS=""
 for f in "$SKILLS_DIR"/*/SKILL.md; do
   name="${f#"$SKILLS_DIR"/}"

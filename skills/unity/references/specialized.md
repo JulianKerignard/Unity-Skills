@@ -237,7 +237,7 @@ public class PlatformerController : MonoBehaviour
         _isGrounded = Physics2D.OverlapCircle(
             _groundCheck.position, 0.15f, _groundLayer);
 
-        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveX = Input.GetAxisRaw("Horizontal"); // Old Input — use New Input System for production
         _rb.linearVelocity = new Vector2(moveX * _speed, _rb.linearVelocity.y);
     }
 
