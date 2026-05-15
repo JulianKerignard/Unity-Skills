@@ -198,7 +198,7 @@ Pour chaque generation, produire :
 
 - Prototype rapide sans architecture ? Utiliser `/proto` (Unity Rapid Proto)
 - Refactorer du code existant ? Utiliser `/unity-refactor` (Unity Refactor)
-- Creer un custom inspector pour le composant genere ? Utiliser `/unity-editor-tools` (Unity Editor Tools)
+- Creer un custom inspector pour le composant genere ? Utiliser `/editor` (Unity Editor Tools)
 - Generer et executer les tests NUnit ? Utiliser `/unity-test` (Unity Test)
 
 ## Troubleshooting
