@@ -11,7 +11,7 @@ Guider l'utilisation du systeme Addressables pour le chargement d'assets asynchr
 
 ## Prerequis
 
-- Package `com.unity.addressables` installe via Package Manager
+- Package `com.unity.addressables` installe via Package Manager (>= 2.x recommande sur Unity 6+, 2.6+ pour la nouvelle UX Groups window / hierarchies / Label window)
 
 ## Demarrage rapide
 

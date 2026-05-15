@@ -1,6 +1,6 @@
 ---
 name: "Unity Shader Generator"
-description: "Genere des shaders Unity (HLSL/ShaderLab) pour effets visuels. Triggers: /shader, /shader-gen, 'creer un shader', 'effet visuel shader', 'dissolve', 'outline', 'toon shading', 'hologram', 'water shader'. Detecte automatiquement le render pipeline (URP/HDRP/Built-in) et produit un fichier .shader pret a l'emploi avec instructions de Material."
+description: "Genere des shaders Unity (HLSL/ShaderLab) pour effets visuels. Triggers: /shader, /shader-gen, 'creer un shader', 'effet visuel shader', 'dissolve', 'outline', 'toon shading', 'hologram', 'water shader', 'terrain shader graph'. Detecte automatiquement le render pipeline (URP/HDRP/Built-in) et produit un fichier .shader pret a l'emploi avec instructions de Material. Couvre Shader Graph 6.3+ (terrain, 8 UV channels, nested SubGraph properties)."
 ---
 
 # Unity Shader Generator
@@ -103,6 +103,14 @@ Toujours fournir les instructions de setup Material :
 Unity 6 utilise le **Render Graph** comme backend pour URP et HDRP. Les custom render passes doivent migrer vers `RecordRenderGraph` (l'ancien `Execute` est deprecie).
 
 Pattern et migration detailles dans `references/shader-templates.md#render-graph-api`.
+
+## Nouveautes Shader Graph (Unity 6.3 LTS)
+
+- **Terrain shaders dans Shader Graph** : creer des materiaux de terrain (URP et HDRP) sans HLSL. Plus besoin d'editer les shaders Nature Renderer ou de coder un terrain layer blending custom.
+- **8 UV channels** (UV0 → UV7, anciennement 4) : stocker des donnees supplementaires par vertex (blend weights, material IDs, parametres d'animation, atlasing avance).
+- **Nested SubGraph properties & keywords** : exposer les properties et keywords d'une SubGraph au shader parent. Permet de composer des shaders en assemblant des SubGraphs auto-contenues, sans plomber les connexions a la main a travers la hierarchie.
+- **SubGraph template browser** ameliore.
+- **Fullscreen Shader Graph** : pour les post-processing custom en URP/HDRP, preferer ce template (zero code) plutot qu'un ScriptableRenderPass.
 
 ## ShadowCaster Pass URP
 

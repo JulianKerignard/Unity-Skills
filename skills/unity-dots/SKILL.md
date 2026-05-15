@@ -12,9 +12,9 @@ Guide l'implementation DOTS (Entity Component System + Job System + Burst Compil
 ## Prerequis
 
 **Packages obligatoires** (via Package Manager ou `manifest.json`) :
-- `com.unity.entities` (>= 1.3.x pour Unity 6)
+- `com.unity.entities` (>= 1.4.x pour Unity 6.2+, recommande sur 6.3 LTS)
 - `com.unity.burst` (>= 1.8.x)
-- `com.unity.collections` (>= 2.4.x)
+- `com.unity.collections` (>= 2.5.x)
 
 **Optionnels** :
 - `com.unity.entities.graphics` — rendu DOTS (Entities Graphics / Hybrid Renderer)
@@ -58,12 +58,14 @@ Mon projet a-t-il besoin de DOTS ?
     --> Full DOTS avec authoring/baking
 ```
 
-### Roadmap ECS (Unity 6.4+)
+### Entities 1.4.x (Unity 6.2 / 6.3 LTS)
 
-- **Unity 6.4** : le package `com.unity.entities` transite vers un package core (integre a l'editeur, plus besoin de l'installer manuellement)
-- **Unity 6.5 (prevu)** : changements structurels sur le type `Entity` (passage a un ID 64-bit). Impact : la serialisation custom et le stockage d'`Entity` dans des `NativeContainer` pourront etre affectes. Anticiper en evitant de persister des `Entity` bruts — utiliser des identifiants metier a la place.
+- **System inspector** : composants Disabled/Present/Absent/None dans les queries + onglet **Dependency** listant les composants dont depend le system.
+- **SystemTypeIndex** sur `SystemHandle`, **ChunkEntityEnumerator** plus rapide, ameliorations Content Management API.
 
-Ces changements ne cassent pas le code existant dans Unity 6.0-6.3 mais sont importants pour les decisions d'architecture a long terme.
+### Roadmap ECS (au-dela de 6.3 LTS)
+
+Roadmap Unite Barcelone (nov. 2025) : ameliorations incrementales jusqu'a la prochaine LTS Unity 6.7. Unity 6.4+ : `com.unity.entities` devient core (plus d'install manuelle). Unity 6.5+ : passage du type `Entity` a un ID 64-bit (impact serialisation custom — eviter de persister des `Entity` bruts, utiliser des IDs metier).
 
 ## Guide etape par etape
 

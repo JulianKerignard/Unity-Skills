@@ -16,10 +16,11 @@ Scope: NGO uniquement. Pas DOTS Netcode, pas Mirror, pas Photon.
 
 ## Prerequis
 
-- Package `com.unity.netcode.gameobjects` (>= 1.5.0)
+- Package `com.unity.netcode.gameobjects` (>= 2.x recommande sur Unity 6+, 2.6+ pour les dernieres ameliorations Distributed Authority)
 - Un GameObject `NetworkManager` dans la scene
-- Unity Transport (`com.unity.transport`) comme couche transport
+- Unity Transport (`com.unity.transport`) comme couche transport (supporte WebSocket via `WebSocketPath`)
 - (Optionnel) Compte Unity Gaming Services pour Lobby / Relay
+- (Optionnel) Multiplayer Services SDK (Distributed Authority, matchmaking moderne)
 
 ## Demarrage rapide
 
@@ -65,6 +66,15 @@ Pour les jeux avec serveur dedie (pas host mode) :
 - **Setup** : Installer le package → configurer les roles dans Build Profiles → assigner les roles aux composants/GameObjects
 
 Pertinent uniquement pour les jeux qui shippent un binaire serveur separe. Pas necessaire en mode host.
+
+### Nouveautes NGO 2.x (compatible Unity 6+)
+
+- **Distributed Authority** : topologie ou la possession des objets est repartie entre clients (pas un seul server faisant autorite). Reduit la latence pour des jeux casual coop. Configurer via Multiplayer Services SDK.
+- **Universal RPC** (`[Rpc(SendTo.X, RequireOwnership = false, RequireLocalOwnership = false)]`) : remplace progressivement les `[ServerRpc]` / `[ClientRpc]` separes. Plus flexible (SendTo.Server, ClientsAndHost, Owner, NotOwner, SpecifiedInParams).
+- **RpcInvokePermission** (NGO 2.6+) : remplace les flags `RequireOwnership` historiques pour controler qui peut invoquer un RPC.
+- **WebSocket support** : `UnityTransport.ConnectionData.WebSocketPath` controle le path utilise par WebSockets (build WebGL multiplayer).
+- **NetworkPrefabInstanceHandlerWithData<T>** : variante de `INetworkPrefabInstanceHandler` qui permet de passer des donnees personnalisees au moment du `Instantiate()` (utile pour skin selection, loadout).
+- **Optimisations Distributed Authority** : NetworkVariable et NetworkTransform optimises pour reduire les paquets.
 
 ## Guide etape par etape
 
@@ -115,6 +125,8 @@ public class PlayerController : NetworkBehaviour
     }
 
     // Server RPC — appele par le client, execute sur le server
+    // NGO 2.x : preferer [Rpc(SendTo.Server, RequireOwnership = ...)] ou
+    // RpcInvokePermission au lieu de ServerRpc/ClientRpc historiques
     [ServerRpc]
     public void AddScoreServerRpc(int points)
     {
@@ -170,7 +182,7 @@ Workflow :
 | Probleme | Solution |
 |----------|----------|
 | "NetworkObject is not spawned" | Verifier que le prefab a un composant NetworkObject et est spawne via NetworkManager |
-| ServerRpc pas appele | Verifier le suffixe `ServerRpc` dans le nom de methode et que l'appelant est le owner (ou `RequireOwnership = false`) |
+| ServerRpc pas appele | Verifier le suffixe `ServerRpc` dans le nom de methode et que l'appelant est le owner. En NGO 2.x, preferer `[Rpc(SendTo.Server)]` + `RpcInvokePermission` au lieu de l'ancien `RequireOwnership` |
 | Desync d'etat | Utiliser NetworkVariable au lieu de variables locales. Verifier les read/write permissions |
 | Latence visible | Implementer client-side prediction (voir references/netcode-advanced.md) |
 | "Object already spawned" | Ne pas appeler Spawn() sur un objet deja spawne. Verifier le flow de spawn |

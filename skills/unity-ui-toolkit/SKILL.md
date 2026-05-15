@@ -1,20 +1,22 @@
 ---
 name: "Unity UI Toolkit"
-description: "Creation d'interfaces utilisateur avec UI Toolkit (UXML, USS, C# bindings). Genere des ecrans complets avec structure UXML, styling USS et presenter C#. Triggers: /uitk, /ui, 'UI Toolkit', 'UXML', 'USS', 'UIDocument', 'data binding UI', 'runtime UI', 'menu principal', 'HUD', 'interface utilisateur Unity'."
+description: "Creation d'interfaces utilisateur avec UI Toolkit (UXML, USS, C# bindings). Genere des ecrans complets avec structure UXML, styling USS et presenter C#. Couvre filtres CSS, SVG/Vector Graphics, UI Test Framework et runtime data binding (Unity 6.3+). Triggers: /uitk, /ui, 'UI Toolkit', 'UXML', 'USS', 'UIDocument', 'data binding UI', 'runtime UI', 'menu principal', 'HUD', 'interface utilisateur Unity', 'SVG UI', 'filter UI'."
 ---
 
 # Unity UI Toolkit
 
 ## Ce que fait cette skill
 
-Creer des interfaces Unity avec UI Toolkit, le systeme UI moderne d'Unity 6+.
+Creer des interfaces Unity avec UI Toolkit, le systeme UI moderne d'Unity 6+ (recommande 6.3 LTS).
 Genere la structure UXML (layout), le styling USS (apparence) et le code C#
-presenter/controller (logique). Couvre runtime UI (jeu) et Editor UI (outils).
-Remplace progressivement UGUI avec une approche web : separation structure/style/logique, flexbox, pseudo-classes CSS.
+presenter/controller (logique). Couvre runtime UI (jeu) et Editor UI (outils),
+filtres CSS-style, SVG/Vector Graphics integre, world-space UI ameliore, et
+UI Test Framework pour l'automation. Remplace progressivement UGUI avec une
+approche web : separation structure/style/logique, flexbox, pseudo-classes CSS.
 
 ## Prerequis
 
-- **Unity 6+** (UI Toolkit inclus nativement, runtime-ready)
+- **Unity 6+** (UI Toolkit inclus nativement, runtime-ready). Unity 6.3 LTS recommande pour filtres CSS, SVG core et UI Test Framework
 - **UIDocument** component attache a un GameObject dans la scene
 - **PanelSettings** asset (sort order, scale mode, screen match)
 
@@ -139,6 +141,15 @@ public class MainMenuPresenter : MonoBehaviour
 6. Attacher le script presenter sur le meme GameObject
 7. Ajuster le Sort Order si plusieurs UIDocuments coexistent
 
+## Nouveautes Unity 6.3 LTS
+
+- **Filtres CSS-style** sur les sous-arbres (opacity, tint, grayscale, sepia, invert, blur). Editable en USS ou directement dans UI Builder. Utile pour overlay desature en pause, focus blur, mode daltonien.
+- **Vector Graphics integre au core** : les SVG s'importent directement comme Vector Images sans installer le package separe. Antialiasing par tesselation pour des courbes nettes a n'importe quelle echelle.
+- **Custom shaders / filters** pour effets de post-processing UI (glassmorphism, halo, distortion).
+- **UI Test Framework** (package) : APIs pour simuler clicks, drag, focus, transitions ; gestion d'etat optimisee pour des tests rapides. Combiner avec `/test`.
+- **Runtime bindings** : `[UxmlElement]` / `[UxmlAttribute]` + `INotifyBindablePropertyChanged` + `[CreateProperty]` pour binder dynamiquement la donnee. Plus besoin d'`Q<T>` + assignation manuelle pour les controls qui suivent un ViewModel.
+- **World-space UI** : rendu ameliore (resolution, picking, occlusion) pour les HUD attaches a des GameObjects 3D.
+
 ## Regles strictes
 
 - **TOUJOURS** utiliser `Q<T>("name")` pour querier les elements (jamais `Query` sans type)
@@ -166,6 +177,7 @@ Assets/UI/
 
 - `/unity-editor-tools` — Editor UI avec UI Toolkit (Custom Inspectors, EditorWindows)
 - `/unity-code-gen` — generer automatiquement les presenters C# a partir du UXML
+- `/test` — UI Test Framework pour tests d'interface automatises (Unity 6.3+)
 
 ## Troubleshooting
 

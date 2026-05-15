@@ -1,17 +1,17 @@
 ---
 name: "Unity 2D"
-description: "Guide complet pour le developpement 2D dans Unity 6+ : Tilemap, Sprite, 2D platformer, top-down 2D, 2D physics, Light2D, Sprite Atlas, pixel art, 2D game, jeu 2D, tile, Rule Tile. Commandes : /unity-2d, /2d"
+description: "Guide complet pour le developpement 2D dans Unity 6+ (6.3 LTS) : Tilemap, Sprite, 2D platformer, top-down 2D, 2D physics, Box2D v3, Light2D, Sprite Atlas, pixel art, rendu 3D-dans-2D, 2D game, jeu 2D, tile, Rule Tile. Commandes : /unity-2d, /2d"
 ---
 
 # Unity 2D
 
 ## Ce que fait cette skill
 
-Guide le developpement de jeux 2D dans Unity 6+ : mise en place de Tilemaps et Rule Tiles, physics 2D (Rigidbody2D, Collider2D), gestion des sprites et Sprite Atlas, eclairage 2D avec URP (Light2D, Shadow Caster 2D), configuration camera avec Cinemachine, et patterns de gameplay (platformer, top-down, puzzle). Couvre aussi le pixel art, le parallax scrolling et l'optimisation des Tilemaps.
+Guide le developpement de jeux 2D dans Unity 6+ (recommande 6.3 LTS) : mise en place de Tilemaps et Rule Tiles, physics 2D (Rigidbody2D, Collider2D classique + nouveau API low-level Box2D v3), gestion des sprites et Sprite Atlas, eclairage 2D avec URP (Light2D, Shadow Caster 2D), configuration camera avec Cinemachine, hybride 3D-dans-2D (Unity 6.3+), et patterns de gameplay (platformer, top-down, puzzle). Couvre aussi le pixel art, le parallax scrolling et l'optimisation des Tilemaps.
 
 ## Prerequis
 
-- Unity 6.0+ avec **URP** configure en **2D Renderer**
+- Unity 6.0+ avec **URP** configure en **2D Renderer** (Unity 6.3 LTS recommande pour Box2D v3 et 3D-dans-2D)
 - Package **2D Tilemap Extras** (Rule Tiles, Animated Tiles)
 - Package **Cinemachine** pour la camera 2D
 - Package **2D Sprite** et **2D Animation** si Sprite Swap necessaire
@@ -46,8 +46,16 @@ Type de jeu 2D ?
 |   +-- --------------------> UI Toolkit (/uitk), pas de physics 2D
 |
 +-- Besoin de lumiere / ombres ?
-    +-- --------------------> URP 2D Renderer + Light2D
-                              (voir references/2d-rendering.md)
+|   +-- --------------------> URP 2D Renderer + Light2D
+|                              (voir references/2d-rendering.md)
+|
++-- Besoin de meshs 3D dans une scene 2D (6.3+) ?
+|   +-- --------------------> 2D Renderer + Mesh2D-Lit-Default
+|                              Sorting Group "Sort 3D As 2D" actif
+|
++-- Besoin physique 2D haute perf / deterministe ?
+    +-- --------------------> Box2D v3 (UnityEngine.LowLevelPhysics2D, 6.3+)
+                              cohabite avec l'API classique
 ```
 
 ## Guide etape par etape
@@ -76,6 +84,14 @@ CinemachineCamera avec **CinemachinePositionComposer** (Dead Zone, Lookahead). A
 ### Etape 5 : Import et optimisation des sprites
 
 Importer les spritesheets. Configurer le **Sprite Editor** pour le slice (Grid by Cell Size). Creer un **Sprite Atlas** par zone/categorie (voir references/2d-rendering.md). Pour le pixel art : Filter = Point, Compression = None, PPU = taille de tuile.
+
+En Unity 6.3+, lancer **Sprite Atlas Analyser** (Window > 2D > Sprite Atlas Analyser) pour detecter les sprites non-packees et les inefficacites de packing.
+
+### Nouveautes Unity 6.3 LTS pour le 2D
+
+- **Box2D v3 low-level API** (`UnityEngine.LowLevelPhysics2D`) : physique multi-thread, deterministe, debugger visuel. Cohabite avec Rigidbody2D classique. A choisir uniquement si besoin de scenarios >1000 corps ou determinisme strict (rollback netcode, replays).
+- **3D dans 2D** : le 2D Renderer accepte maintenant `MeshRenderer` et `SkinnedMeshRenderer`. Utiliser le materiau `Mesh2D-Lit-Default` (cree automatiquement avec un GameObject 3D dans un projet 2D URP), activer "Sort 3D As 2D" sur le Sorting Group, et "2D > Mask Interaction" pour interagir avec les Sprite Masks. Pour les Shader Graph custom, cocher "Sort 3D As 2D Compatible" dans Graph Settings.
+- **Legacy Animation** : ~30% plus rapide sur les hierarchies animees complexes.
 
 ## Regles strictes
 
