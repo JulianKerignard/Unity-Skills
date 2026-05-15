@@ -19,7 +19,7 @@ A collection of 15 AI-powered skills for Unity 6+ project management and develop
 | **[unity-debug](unity-debug/SKILL.md)** | `/unity-debug` | Systematic bug diagnosis using decision trees for NullRef, physics, async, lifecycle issues |
 | **[unity-rapid-proto](unity-rapid-proto/SKILL.md)** | `/proto` | Instant gameplay prototyping — idea to playable scene with minimal code, no architecture |
 | **[unity-perf-audit](unity-perf-audit/SKILL.md)** | `/perf-audit` | Static code analysis detecting 30+ performance anti-patterns with severity scoring |
-| **[unity-editor-tools](unity-editor-tools/SKILL.md)** | `/unity-editor-tools` | Create custom Editor extensions: inspectors, windows, property drawers (IMGUI + UI Toolkit) |
+| **[unity-editor-tools](unity-editor-tools/SKILL.md)** | `/editor` | Create custom Editor extensions: inspectors, windows, property drawers (IMGUI + UI Toolkit) |
 | **[unity-refactor](unity-refactor/SKILL.md)** | `/unity-refactor` | Incremental, safe refactoring with code smell detection and step-by-step execution |
 | **[unity-shader-gen](unity-shader-gen/SKILL.md)** | `/shader` | Generate HLSL/ShaderLab shaders with auto pipeline detection (URP/HDRP/Built-in), Render Graph |
 | **[unity-build-config](unity-build-config/SKILL.md)** | `/build-config` | Configure CI/CD pipelines, build scripts, Build Profiles (Unity 6+), .gitignore, Git LFS |
