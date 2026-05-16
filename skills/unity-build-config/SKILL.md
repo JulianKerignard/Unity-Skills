@@ -113,7 +113,7 @@ Checklist pre-release par plateforme disponible dans `references/build-templates
 
 ## Skills connexes
 
-- Le script BuildAutomation necessite un editor tool plus avance ? Utiliser `/unity-editor-tools` (Unity Editor Tools)
+- Le script BuildAutomation necessite un editor tool plus avance ? Utiliser `/editor` (Unity Editor Tools)
 - Generer un script de build custom ? Utiliser `/unity-code-gen` (Unity Code Gen) pour le code C# Editor
 - Shader custom a builder ? Utiliser `/shader` (Unity Shader Generator)
 
