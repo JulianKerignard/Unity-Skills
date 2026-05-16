@@ -34,7 +34,7 @@ Quel type d'UI ?
 |   +-- Menu / ecran complet → UXML + USS + C# presenter + navigation stack
 |   +-- UI world-space → UIDocument sur GO + PanelSettings world-space
 +-- Editor UI ?
-|   +-- Custom Inspector → CreateInspectorGUI() + UXML (voir /unity-editor-tools)
+|   +-- Custom Inspector → CreateInspectorGUI() + UXML (voir /editor)
 |   +-- EditorWindow → CreateGUI() + UXML
 +-- Legacy UGUI existant → evaluer migration ou coexistence
 ```
@@ -164,7 +164,7 @@ Assets/UI/
 
 ## Skills connexes
 
-- `/unity-editor-tools` — Editor UI avec UI Toolkit (Custom Inspectors, EditorWindows)
+- `/editor` — Editor UI avec UI Toolkit (Custom Inspectors, EditorWindows)
 - `/unity-code-gen` — generer automatiquement les presenters C# a partir du UXML
 
 ## Troubleshooting
